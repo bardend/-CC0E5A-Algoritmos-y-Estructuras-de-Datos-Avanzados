@@ -1,0 +1,54 @@
+# Para C++
+# Archivos generados por compiladores
+**/*.o
+**/*.obj
+**/*.so
+**/*.exe
+**/*.out
+**/*.dll
+**/*.pdb
+**/*.idb
+**/*.ilk
+**/*.lib
+**/*.a
+**/*.lo
+**/*.la
+**/*.class
+
+# Archivos de sistema
+**/.DS_Store
+**/Thumbs.db
+
+# Archivos de configuración de IDEs
+**/.vscode/
+**/.idea/
+**/*.suo
+**/*.user
+**/*.userosscache
+**/*.sln
+**/*.suo
+
+# Archivos de depuración
+**/*.dSYM/
+**/debug/
+**/release/
+
+# Para C#
+# Archivos de compilación
+**/bin/
+**/obj/
+
+# Archivos de usuario de Visual Studio
+**/.vs/
+**/.vs2017/
+**/.vs2019/
+**/.vs2015/
+**/.idea/
+
+# Archivos de configuración de JetBrains Rider
+**/.idea/
+
+# Otros archivos temporales
+**/*.user
+**/*.userosscache
+
