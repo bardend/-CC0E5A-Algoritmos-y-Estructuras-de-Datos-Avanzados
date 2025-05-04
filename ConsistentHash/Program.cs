@@ -37,5 +37,11 @@ public class Program {
             bool exists = filter.Contains(number);
             Console.WriteLine($"¿Contiene {number}? {(exists ? "Sí" : "No")} (CORRECTO: Debería ser No)");
         }
+
+        var hash = new PerfectHash<string, int>(100);
+        string testKey = "test_key";
+        int testValue = 42;
+        hash.Insert(testKey, testValue);
+
     }
 }

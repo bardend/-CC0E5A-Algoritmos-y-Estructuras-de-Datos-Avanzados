@@ -65,6 +65,23 @@ namespace ConsistentHash.src {
 
         public void Print() => PrintRecursive(root, 0);
 
+        public Node<T> UpperBound(T value) {
+            return UpperBound(root, value);
+        }
+
+        private Node<T> UpperBound(Node<T> node, T value) {
+            if(node == null) 
+                return null;
+
+            if (node.X.CompareTo(value) > 0) {
+                Node<T> leftResult = UpperBound(node.Left, value);
+                return leftResult ?? node;
+            }
+            else 
+                return UpperBound(node.Right, value);
+        }
+
+
         private void PrintRecursive(Node<T> node, int depth) {
             if (node == null) return;
 
