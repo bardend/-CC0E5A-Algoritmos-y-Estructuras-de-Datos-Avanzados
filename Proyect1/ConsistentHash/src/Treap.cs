@@ -5,6 +5,8 @@ namespace ConsistentHash.src {
     public class Treap<T> where T : IComparable<T> {
         
         private Node<T> root;
+        private int _size = 0;
+
 
         public Node<T> Split(T newX){
             Node<T> current = root;  
@@ -52,6 +54,11 @@ namespace ConsistentHash.src {
                 var (left, right) = Split(root, newNode.X);
                 root = Merge(Merge(left, newNode), right);
             }
+            _size += 1;
+        }
+
+        public void Insert(T newVal) {
+            Insert(new Node<T>(newVal));
         }
         
         public void Delete(Node<T> newNode) {
@@ -60,27 +67,31 @@ namespace ConsistentHash.src {
             var (left, right) = Split(root, newNode.X);
             var (left2, right2) = Split(right, newNode.NextVal());
             root = Merge(left, right2);
+            _size -= 1;
             return ;
         }
 
         public void Print() => PrintRecursive(root, 0);
 
-        public Node<T> UpperBound(T value) {
+        public T UpperBound(T value) {
             return UpperBound(root, value);
         }
 
-        private Node<T> UpperBound(Node<T> node, T value) {
+        private T UpperBound(Node<T> node, T value) {
             if(node == null) 
-                return null;
+                return default(T);  // Changed from null to default(T) for value types
 
             if (node.X.CompareTo(value) > 0) {
-                Node<T> leftResult = UpperBound(node.Left, value);
-                return leftResult ?? node;
+                T leftResult = UpperBound(node.Left, value);
+                return leftResult ?? node.X;
             }
             else 
                 return UpperBound(node.Right, value);
         }
 
+        public int Size {
+            get { return _size; }
+        }
 
         private void PrintRecursive(Node<T> node, int depth) {
             if (node == null) return;
