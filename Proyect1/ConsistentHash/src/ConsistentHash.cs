@@ -9,7 +9,7 @@ namespace ConsistentHash.src {
         private int _currentNode = 0;
         private PerfectHash<T, int> _hash;
         private PerfectHash<int, T> _revHash;
-        private Treap<int> _treap = new Treap<int>();
+        private Treap<int> _treap;
         
         public ConsistentHash(int size) {
             _size = size;
@@ -20,6 +20,7 @@ namespace ConsistentHash.src {
             _dsu = new DSU(_size);
             _hash = new PerfectHash<T, int>(_size);
             _revHash = new PerfectHash<int, T>(_size);
+            _treap = new Treap<int>();
         }
 
         public void InsertCache(T cache) {
@@ -37,26 +38,28 @@ namespace ConsistentHash.src {
 
         public void DeleteServer(T server) {
             int id = _hash.Get(server);
-            _dsu.Server[id] = _treap.UpperBound(id);
+            var up = _treap.UpperBound(id);
+            _dsu.Server[id] = up.HasValue ? up.Value : _treap.UpperBound(int.MinValue).Value;
         }
 
         public void InsertServer(T server) {
-
             _hash.Insert(server, _currentNode);
             _revHash.Insert(_currentNode++, server);
 
-            if(_treap.Size() == 0) {
-               //_treap.Insert(server);
+            if(_treap.Size == 0) {
+                _treap.Insert(_hash.Get(server));
+            }
+            else {
+                int currentPos = _hash.Get(server);
+                var nearest = _treap.NearestMinor(currentPos);
+                Optional<int> bound = nearest.HasValue ? nearest 
+                                                       : _treap.NearestMinor(int.MaxValue);
+
+                for(int node = bound.Value; ; node = (node+1)%_size) {
+                    _dsu.Server[node] = currentPos;
+                    if(node == currentPos) break;
+                }
             }
         }
-
-        // public void InsertServer(T server) {
-        //     _hash.Insert(server, _currentNode);
-        //     _revHash.Insert(_currentNode++, server);
-        //     // int id = _hash.Get(server);
-        //     // lazy.Update(NextPos(_treap.UpperBound(id)), BeforePos(id), -1);
-        //     // _dsu.Server[id] = id;
-        // }
-        
     }
 }

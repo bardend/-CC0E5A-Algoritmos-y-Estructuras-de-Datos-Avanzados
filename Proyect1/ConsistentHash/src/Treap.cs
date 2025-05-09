@@ -60,7 +60,7 @@ namespace ConsistentHash.src {
         public void Insert(T newVal) {
             Insert(new Node<T>(newVal));
         }
-        
+
         public void Delete(Node<T> newNode) {
             if(root == null) 
                 return;
@@ -73,20 +73,37 @@ namespace ConsistentHash.src {
 
         public void Print() => PrintRecursive(root, 0);
 
-        public T UpperBound(T value) {
+        public Optional<T> UpperBound(T value) {
             return UpperBound(root, value);
         }
 
-        private T UpperBound(Node<T> node, T value) {
+        private Optional<T> UpperBound(Node<T> node, T value) {
             if(node == null) 
-                return default(T);  // Changed from null to default(T) for value types
+                return Optional<T>.None();
 
             if (node.X.CompareTo(value) > 0) {
-                T leftResult = UpperBound(node.Left, value);
-                return leftResult ?? node.X;
+                Optional<T> leftResult = UpperBound(node.Left, value);
+                return leftResult.HasValue ? leftResult : Optional<T>.Some(node.X);
             }
             else 
                 return UpperBound(node.Right, value);
+        }
+
+        public Optional<T> NearestMinor(T value) {
+            return NearestMinor(root, value);
+        }
+
+        private Optional<T> NearestMinor(Node<T> node, T value) {
+            if(node == null) 
+                return Optional<T>.None();
+
+            if(node.X.CompareTo(value) > 0) 
+                return NearestMinor(node.Left, value);
+
+            else {
+                Optional<T>rightResult = NearestMinor(node.Right, value);
+                return rightResult.HasValue ? rightResult : Optional<T>.Some(node.X);
+            }
         }
 
         public int Size {
