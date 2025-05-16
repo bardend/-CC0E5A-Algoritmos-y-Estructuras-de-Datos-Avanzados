@@ -4,10 +4,9 @@ using System.Collections.Generic;
 
 namespace ConsistentHash.src {
 
-     public class PerfectHash<T1, T2> { 
+     public class PerfectHash<T1, T2> :IHash<T1, T2>{ 
 
-        // This is a typical Hash where (key, value) are stored in a list with size m.
-        // Allowing O(1) access time.
+        // Allowing O(1) access time ``amortized``.
         //
         // Warning:
         // This class does not yet handle the case when a unknow key is requested.
@@ -22,10 +21,10 @@ namespace ConsistentHash.src {
         }
 
         public void Insert(T1 key, T2 value) {
-            mp[hash.Hash(key)] = value;
+            mp[hash.Transform(key)] = value;
         }
         public T2 Get(T1 key) {
-            int index = hash.Hash(key);
+            int index = hash.Transform(key);
             if (index >= 0 && index < mp.Count) {
                 return mp[index];
             }

@@ -1,6 +1,7 @@
 using System;
 
 namespace ConsistentHash.src {
+
     public class Node<T> where T : IComparable<T> {
         public T X { get; }          
         public int Y { get; }       
@@ -10,7 +11,7 @@ namespace ConsistentHash.src {
         public Node(T value)
         {
             X = value;
-            Y = Utils.Random(1, 100);
+            Y = Utils.Random(1, 1000000);
         }
 
         // Métodos de comparación (solo devuelven bool como solicitaste)

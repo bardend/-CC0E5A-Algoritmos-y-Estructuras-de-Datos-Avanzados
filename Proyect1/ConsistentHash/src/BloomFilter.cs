@@ -3,7 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 
 namespace ConsistentHash.src  {
-    public class BloomFilter<T> where T : IComparable<T>  {
+    //public class BloomFilter<T> where T : IComparable<T>  {
+    public class BloomFilter<T> {
 
         public BitArray Mask { get; set; }
         private List<MurmuHash<T>> hashFamily = new List<MurmuHash<T>>();
@@ -18,13 +19,13 @@ namespace ConsistentHash.src  {
 
         public void Insert(T value) {
             foreach(var hashFunc in hashFamily) {
-                Mask[hashFunc.Hash(value)] = true;
+                Mask[hashFunc.Transform(value)] = true;
             }
         }
 
         public bool Contains(T value) {
             foreach(var hashFunc in hashFamily) {
-                if(!Mask[hashFunc.Hash(value)])
+                if(!Mask[hashFunc.Transform(value)])
                     return false;
             }
             return true;

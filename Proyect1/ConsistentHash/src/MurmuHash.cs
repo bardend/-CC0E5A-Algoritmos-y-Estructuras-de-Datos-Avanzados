@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace ConsistentHash.src {
 
-    public class MurmuHash<T> {
+    public class MurmuHash<T> : IFunctionHash<T> {
         private readonly int _seed;
         private readonly int _mod;
         
@@ -15,7 +15,7 @@ namespace ConsistentHash.src {
         }
                
         
-        public int Hash(T value) {
+        public int Transform(T value) {
             int hashCode = EqualityComparer<T>.Default.GetHashCode(value);
             uint hash = MurmurHash3(hashCode, _seed);
             return Math.Abs((int)(hash % _mod)); // Asegurar resultado positivo

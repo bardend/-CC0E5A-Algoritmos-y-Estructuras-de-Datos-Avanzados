@@ -2,6 +2,9 @@ using System;
 using System.Collections.Generic;
 
 
+//Pending implementing some concepts about the _hash will be <T, int> and _revHash will be <int, T>
+//in the class ConsistentHash you vallidate that because probably the _hash would be a input.
+//
 namespace ConsistentHash.src {
     public class ConsistentHash<T> {
         private int _size;
