@@ -1,4 +1,3 @@
-//BinaryTreeBalanced.cs
 using System;
 using System.Collections.Generic;
 
@@ -25,18 +24,21 @@ namespace Proyect2.src {
                 }
 
                 current = stack.Pop();
-                current.Left = null;
-                current.Right = null;
-                current.Parent = null;
-
                 nodes.Add(current);
                 current = current.Right;
+            }
+
+            foreach(var x in nodes) {
+                x.Right = null;
+                x.Left = null;
+                x.Parent = null;
             }
 
             return nodes;
         }
 
         public Node<K, V> BuildBalancedTree(List<Node<K, V>> nodes) {
+
             return BuildBalancedTreeHelper(nodes, 0, nodes.Count - 1);
         }
 
