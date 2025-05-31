@@ -132,12 +132,22 @@ namespace Proyect2.src {
                     return Optional<Node<K, V>>.Some(null);
 
                 else if (node.Left != null && node.Right != null) {
+
                     var successor = FindMin(node.Right);
+                    var originalLeft = node.Left;
+                    var tmp = DeleteRecursive(node.Right, successor.Key);
+
                     node.Key = successor.Key;
                     node.Value = successor.Value;
-                    var tmp = DeleteRecursive(node.Right, successor.Key);
+                    node.Left = originalLeft;
                     node.Right = tmp.Value;
-                    if (tmp.Value != null) tmp.Value.Parent = node;
+
+                    if (tmp.Value != null) 
+                        tmp.Value.Parent = node;
+
+                    if (originalLeft != null) 
+                        originalLeft.Parent = node;
+
                     node.Update(alpha);
                     return Optional<Node<K, V>>.Some(node);
                 } 
@@ -151,8 +161,21 @@ namespace Proyect2.src {
         }
 
         private Node<K, V> FindMin(Node<K, V> node) {
-            while (node?.Left != null)
+
+            Console.WriteLine($"baja-> :");
+            Console.WriteLine("-----------------------");
+            Console.WriteLine($"EL SUCCESOR ES :{node.Key}");
+            Console.WriteLine("-----------------------");
+
+
+            while (node?.Left != null) {
                 node = node.Left;
+            }
+
+            Console.WriteLine("-----------------------");
+            Console.WriteLine($"EL SUCCESOR ES :{node.Key}");
+            Console.WriteLine("-----------------------");
+
             return node;
         }
 

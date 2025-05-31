@@ -25,6 +25,10 @@ namespace Proyect2.src {
                 }
 
                 current = stack.Pop();
+                current.Left = null;
+                current.Right = null;
+                current.Parent = null;
+
                 nodes.Add(current);
                 current = current.Right;
             }
