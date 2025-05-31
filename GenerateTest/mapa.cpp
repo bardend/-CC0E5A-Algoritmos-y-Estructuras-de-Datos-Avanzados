@@ -21,13 +21,13 @@ string randomstr() {
         xd += ('a' + random(0, 27));
     return xd;
 }
-ofstream out("in.txt");
+ofstream out("../Proyect2/ScapegoatTree.Tests/in.txt");
 
 vector<string> op = {"INSERT", "SEARCH", "DELETE"};
 
 int main() {
 
-    int n = 100000;
+    int n = 1000000;
     map<int, string>mp;
     vector<int>vec;
     vec.push_back(0);
@@ -39,7 +39,7 @@ int main() {
         
         if(id == op[0]) {
             //INSERT KEY VALUE
-            int tmp1 = random(1, 10000000);
+            int tmp1 = random(1, 300);
             string tmp2 = randomstr();
             mp[tmp1] = tmp2;
             vec.push_back(tmp1);
