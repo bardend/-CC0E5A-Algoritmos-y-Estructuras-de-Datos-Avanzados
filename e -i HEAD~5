@@ -1,0 +1,102 @@
+[33mcommit 09f1db54fbe593f515dc5ee84d5a7655ff9f542d[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m)[m
+Author: bardend <ricardo.ulloa.v@uni.pe>
+Date:   Sat May 31 21:37:28 2025 -0500
+
+    Remove large files and update .gitignore
+
+[33mcommit fb7a290d4fa11a3c1f5bc15f77e94cdf5228c326[m
+Author: bardend <ricardo.ulloa.v@uni.pe>
+Date:   Sat May 31 21:32:36 2025 -0500
+
+    Remove large input file exceeding 100MB
+
+[33mcommit 438d285a3e457934acf1d8084f6ab6a9ddd15188[m
+Author: bardend <ricardo.ulloa.v@uni.pe>
+Date:   Sat May 31 21:31:08 2025 -0500
+
+    Final Presentacion
+
+[33mcommit 8ddbc1bb2146a6f2c49ceadaca8ced1ba017dcd9[m
+Author: bardend <ricardo.ulloa.v@uni.pe>
+Date:   Sat May 31 21:27:35 2025 -0500
+
+    Presentacion Final
+
+[33mcommit 1c997641e8d6c7e12af54eee1e5adbbb57377f79[m
+Author: bardend <ricardo.ulloa.v@uni.pe>
+Date:   Sat May 31 16:12:00 2025 -0500
+
+    Implement ScapegoatTree
+
+[33mcommit bf50b55abf09b1146c53b84f2e679bc456d4ce2f[m
+Author: bardend <ricardo.ulloa.v@uni.pe>
+Date:   Sat May 31 15:03:17 2025 -0500
+
+    IMPLEMENT TEST AND AVERAGE TIME SCAPEGOAT_TREE
+
+[33mcommit d331a02815035997db8f4e08215fb6ccde9f47b8[m
+Author: bardend <ricardo.ulloa.v@uni.pe>
+Date:   Sat May 31 13:02:05 2025 -0500
+
+    Proyect2.2
+
+[33mcommit b1f8c10ceab8a6914fd203e0d04c22b78a97322f[m
+Author: bardend <ricardo.ulloa.v@uni.pe>
+Date:   Sat May 31 12:31:09 2025 -0500
+
+    Proyect2
+
+[33mcommit 8fc97ed1bb510ce23411f847cdd02272b3245390[m[33m ([m[1;31morigin/main[m[33m)[m
+Author: bardend <ricardo.ulloa.v@uni.pe>
+Date:   Fri May 16 10:07:00 2025 -0500
+
+    Feat: Implementing Interface for Hashing and preconditions like a concepts(c++)
+
+[33mcommit 4991f8eb56c9a4a33cbd08b9d0301e93444487bd[m
+Author: bardend <ricardo.ulloa.v@uni.pe>
+Date:   Fri May 9 12:55:25 2025 -0500
+
+    Feat: Implement Optional Pattern and Logic for Ring Cycle
+    
+    - Optional Pattern for Methods UpperBound, NearestMinor
+
+[33mcommit 57ab623e2e6592ca7826a4a500daf7dda0270d61[m
+Author: bardend <ricardo.ulloa.v@uni.pe>
+Date:   Wed May 7 23:17:59 2025 -0500
+
+    Remove .gitignore from version control
+
+[33mcommit 0de26e7e180a3228ca1aee4631e39dd2f19ed8ab[m
+Author: bardend <ricardo.ulloa.v@uni.pe>
+Date:   Wed May 7 23:13:12 2025 -0500
+
+    Integrate the Data Structures in RingHash for Persistent Hashing according to the documentation Doc/
+    
+    Develop a Treap(DS), for the servers
+    - In the case to delete a server we need the UpperBound.
+    - In the case we add a server we need the max value so less of their position in the ring.
+    
+    Develop a DSU to find the current server for some cache like a find their representant
+    - This helps the complexity when you delete some server. It's similar to merging two sub-sets.
+
+[33mcommit 0a2ecc8443198ab3cd039685088c87066c4536de[m
+Author: bardend <ricardo.ulloa.v@uni.pe>
+Date:   Sat May 3 22:08:37 2025 -0500
+
+    Feat: Implement DataStructures like a DSU, PerfectHash, Treap
+    
+    Developed a data structures to efficiently manage the steps of the persistent hashing according to the documentation Doc
+
+[33mcommit 63a2ff220109575aa2635f227d5ae711ec7817ac[m
+Author: bardend <ricardo.ulloa.v@uni.pe>
+Date:   Fri May 2 01:57:43 2025 -0500
+
+    Remove .gch files from repository and add them to .gitignore
+
+[33mcommit 86ac8799a2f8ebfadacf04f47bbb4aef092e54c8[m
+Author: bardend <ricardo.ulloa.v@uni.pe>
+Date:   Fri May 2 01:53:52 2025 -0500
+
+    Feat: Implement ConsistentHash
+    
+    Developed a Treap.cs for servers and BloomFilter for hash cache, and servers
