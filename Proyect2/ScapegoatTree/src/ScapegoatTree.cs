@@ -11,7 +11,11 @@ namespace Proyect2.src {
     public class ScapegoatTree<K, V> where K: IComparable<K> {
         public Node<K, V> root {get; set;} = null;
         private List<Node<K, V>> targetNodes = new List<Node<K, V>>();
-        private float alpha = 0.7f;
+        private float alpha;
+
+        public ScapegoatTree(float alp = 0.7f) {
+            alpha = alp;
+        }
 
         public class Optional<T> {
             public T Value { get; }
@@ -70,11 +74,9 @@ namespace Proyect2.src {
         */
 
         private void Rebuild(Node<K, V> node) {
-
             var parent = node.Parent;
             BinaryTreeBalanced<K, V> auxTree = new BinaryTreeBalanced<K, V>(node, alpha);
             Node<K, V> newNode = auxTree.BuildBalancedTree(auxTree.InorderTraversal());
-
             if (parent != null) {
                 if (parent.Left == node) {
                     parent.Left = newNode;
