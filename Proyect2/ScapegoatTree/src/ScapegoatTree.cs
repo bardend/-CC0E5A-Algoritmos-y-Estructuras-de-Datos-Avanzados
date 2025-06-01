@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic; // ← AGREGAR ESTA LÍNEA
+
 //ScapegoatTree.cs
 
 namespace Proyect2.src {
@@ -9,7 +11,11 @@ namespace Proyect2.src {
     public class ScapegoatTree<K, V> where K: IComparable<K> {
         public Node<K, V> root {get; set;} = null;
         private List<Node<K, V>> targetNodes = new List<Node<K, V>>();
-        private float alpha = 0.7f;
+        private float alpha;
+
+        public ScapegoatTree(float alp = 0.7f) {
+            alpha = alp;
+        }
 
         public class Optional<T> {
             public T Value { get; }
@@ -68,19 +74,22 @@ namespace Proyect2.src {
         */
 
         private void Rebuild(Node<K, V> node) {
-            var fixNode = node;
+            var parent = node.Parent;
             BinaryTreeBalanced<K, V> auxTree = new BinaryTreeBalanced<K, V>(node, alpha);
             Node<K, V> newNode = auxTree.BuildBalancedTree(auxTree.InorderTraversal());
-
-            if(fixNode != root) {
-                newNode.Parent = fixNode.Parent;
-                if(fixNode.Parent.Right == fixNode) fixNode.Parent.Right = newNode;
-                else if(fixNode.Parent.Left == fixNode) fixNode.Parent.Left = newNode;
-            }
-            else 
+            if (parent != null) {
+                if (parent.Left == node) {
+                    parent.Left = newNode;
+                } else {
+                    parent.Right = newNode;
+                }
+                newNode.Parent = parent;
+            } else {
                 root = newNode;
+                newNode.Parent = null;
+            }
         }
-        
+       
         public Optional<V> Search(K key) {
             var node = SearchRecursive(root, key);
             return node.HasValue ? Optional<V>.Some(node.Value.Value) : Optional<V>.None();
@@ -103,15 +112,22 @@ namespace Proyect2.src {
             var nodeToDelete = SearchRecursive(root, key);
             if (!nodeToDelete.HasValue) return Optional<V>.None();
 
+            // CAMBIO: Guardar el valor antes de eliminar
+            var valueToReturn = nodeToDelete.Value.Value;
+            
             var result = DeleteRecursive(root, key);
             root = result.Value;
-            root?.Update(alpha);
-            return Optional<V>.Some(default(V));
+            if (root != null) { // CAMBIO: Verificar si root no es null
+                root.Parent = null; // CAMBIO: Root no debe tener parent
+                root.Update(alpha);
+            }
+            
+            return Optional<V>.Some(valueToReturn); // CAMBIO: Retornar el valor eliminado
         }
 
         private Optional<Node<K, V>> DeleteRecursive(Node<K, V> node, K key) {
             if (node == null)
-                return Optional<Node<K, V>>.None();
+                return Optional<Node<K, V>>.Some(null); // CAMBIO: Retornar Some(null) en lugar de None()
 
             if (key.CompareTo(node.Key) < 0) {
                 var tmp = DeleteRecursive(node.Left, key);
@@ -128,11 +144,11 @@ namespace Proyect2.src {
                 return Optional<Node<K, V>>.Some(node);
             } 
             else {
+                // Nodo encontrado - casos de eliminación
                 if (node.Left == null && node.Right == null)
                     return Optional<Node<K, V>>.Some(null);
 
                 else if (node.Left != null && node.Right != null) {
-
                     var successor = FindMin(node.Right);
                     var originalLeft = node.Left;
                     var tmp = DeleteRecursive(node.Right, successor.Key);
@@ -153,7 +169,7 @@ namespace Proyect2.src {
                 } 
                 else {
                     var child = node.Left ?? node.Right;
-                    child.Parent = node.Parent;
+                    // CAMBIO: No asignar Parent aquí, se hace en el nivel superior
                     child.Update(alpha);
                     return Optional<Node<K, V>>.Some(child);
                 }
@@ -162,19 +178,9 @@ namespace Proyect2.src {
 
         private Node<K, V> FindMin(Node<K, V> node) {
 
-            Console.WriteLine($"baja-> :");
-            Console.WriteLine("-----------------------");
-            Console.WriteLine($"EL SUCCESOR ES :{node.Key}");
-            Console.WriteLine("-----------------------");
-
-
             while (node?.Left != null) {
                 node = node.Left;
             }
-
-            Console.WriteLine("-----------------------");
-            Console.WriteLine($"EL SUCCESOR ES :{node.Key}");
-            Console.WriteLine("-----------------------");
 
             return node;
         }
@@ -188,7 +194,7 @@ namespace Proyect2.src {
 
             PrintRecursive(node.Right, level + 1); // Primero la derecha (para que aparezca arriba)
 
-            Console.WriteLine(new string(' ', 20 * level) + $"{node.Key} => {node.Value}");
+            Console.WriteLine(new string(' ', 10 * level) + $"{level} -> {node.Key} ");
 
             PrintRecursive(node.Left, level + 1); // Luego la izquierda
         }
