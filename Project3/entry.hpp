@@ -1,18 +1,30 @@
-#pragma once
+#ifndef ENTRY_HPP
+#define ENTRY_HPP
 #include <memory>
 #include <vector>
 #include <functional>
 #include <cmath>
-#include "m_tree.hpp"
+
+
+template <typename T>
+inline void m_tree_swap_helper(T& a, T& b) {
+	using std::swap;
+	swap(a, b);
+}
+
+template <typename Params> class node;
+template <typename Params> class metric_space;
+template <typename Params> class entry;
 
 template <typename features = double, typename identifier = std::string, int cap_node = 3>
 struct MTreeParams {
     using feature_type = features;
     using identifier_type = identifier;
+    static void swap(std::unique_ptr<entry<MTreeParams>>& a,std::unique_ptr<entry<MTreeParams>>&b) {
+        m_tree_swap_helper(a, b);
+    }
 };
 
-template <typename Params> class node;
-template <typename Params> class metric_space;
 
 template <typename Params>
 class entry {
@@ -97,3 +109,5 @@ class leaf_entry : public entry<Params> {
 public:
     leaf_entry(const entry<Params>& base_entry) : entry<Params>(base_entry) {}
 };
+#endif // ENTRY_HPP
+
