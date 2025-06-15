@@ -32,10 +32,9 @@ public:
     bool is_leaf() const noexcept { return fields_.is_leaf; } // 'noexcept' para optimización
     bool is_overflow() const noexcept { return size_entry_ > capacity;}
     entry_ptr get_entry(int i) { assert(i >= 0 and i < size_entry_);  return entries_[i]; }
-    //
+
     // void insert_entry(entry_ptr& entry) {
-    //     entries_[size_entry_++] = (is_leaf() ? entry, 
-    //
+    //     entries_[size_entry_++] = (is_leaf() ? entry
     //     entries_[size_entry_++] = (is_leaf() ? 
     // }
 };
