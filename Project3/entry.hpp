@@ -1,7 +1,9 @@
+#pragma once
 #include <memory>
 #include <vector>
 #include <functional>
 #include <cmath>
+#include "m_tree.hpp"
 
 template <typename features = double, typename identifier = std::string, int cap_node = 3>
 struct MTreeParams {
@@ -9,14 +11,8 @@ struct MTreeParams {
     using identifier_type = identifier;
 };
 
+template <typename Params> class node;
 template <typename Params> class metric_space;
-
-template <typename Params>
-class Node {
-public:
-    Node() = default;
-    ~Node() = default;
-};
 
 template <typename Params>
 class entry {
@@ -84,7 +80,7 @@ public:
 template <typename Params>
 class internal_entry : public entry<Params> {
 public: 
-    using node_ptr = std::unique_ptr<Node<Params>>;
+    using node_ptr = std::unique_ptr<node<Params>>;
     using distance_type = typename entry<Params>::distance_type;
 
 private:
