@@ -4,22 +4,51 @@
 #include "m_tree.hpp"
 
 int main() {
+
     ////////////////////////////////////////End_point//////////////////////////
+   
     std::vector<double> features1 = {1.0, 2.0};
     std::vector<double> features2 = {0.0, 0.0};
     std::string xd = "xd";
 
+    entry_type e1 = make_entry(features1, "1");
+    entry_type e2 = make_entry(features2, "2"); 
+    entry_type e3 = make_entry(features1, "3");
+    entry_type e4 = make_entry(features1, "4");
 
-    entry_type e1 = make_entry(features1, xd);
-    entry_type e2 = make_entry(features2, xd); 
+    std::cout << e2->oid << std::endl;
+
     ////////////////////////////////////////////////////////////////////////////
 
+    // std::cout << e1->distance_to(*e2, manhattan_space) << std::endl;
+    // std::cout << entry_inter->distance_to(*e1, manhattan_space) << std::endl;
+    // std::cout << entry_leaf->distance_to(*e1, manhattan_space) << std::endl;
 
-    entry_leaf_type entry_leaf = make_leaf(*e2);
-    entry_inter_type entry_inter = make_inter(*e2, nullptr, 1.5);
+    auto leaf_node = make_node(true);
+    leaf_node->print_node();
+    leaf_node->insert_entry(e1);
+    leaf_node->print_node();
+    leaf_node->insert_entry(e2);
+    leaf_node->print_node();
+    leaf_node->insert_entry(e3);
+    leaf_node->print_node();
 
-    std::cout << e1->distance_to(*e2, manhattan_space) << std::endl;
-    std::cout << entry_inter->distance_to(*e1, manhattan_space) << std::endl;
-    std::cout << entry_leaf->distance_to(*e1, manhattan_space) << std::endl;
+    std::cout << "-ANOTHER" << std::endl;
+    auto other = make_node(true);
+    leaf_node->move_entry(2, other, 3);
+    other->insert_entry(e4);
+    other->print_node();
+
+    other->swap_entry(0, leaf_node, 1);
+    other->print_node();
+
+    other->remove_entry(0);
+    other->print_node();
+
+    auto tree = make_tree();
+    std::cout << tree->size_nodes() << std::endl;
+    entry_type e5 = make_entry(features1, "5");
+    tree->insert(e5);
+
     return 0;
 }
