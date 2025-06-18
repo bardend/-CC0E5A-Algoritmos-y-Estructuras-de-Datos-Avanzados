@@ -9,6 +9,9 @@
 #include <limits>
 #include <algorithm>
 
+#include <algorithm>
+#include <queue>
+
 #include "entry.hpp"
 #include "utils.hpp"
 
@@ -47,6 +50,7 @@ public:
     bool is_overflow() const noexcept { return size_entry_ > capacity;}
     bool empty() const noexcept {return size_entry_ == 0;}
     int size_entry() const noexcept { return size_entry_;}
+
 
     entry_ptr& get_entry(int i) {
         assert(i >= 0 and i < capacity+1);
@@ -217,7 +221,7 @@ public:
     ~m_tree() = default;
     int size_nodes() const noexcept { return size_nodes_; }
     void clear() noexcept { root_.reset(); size_nodes_ = 0; size_entries_ =0; }
-
+    node_ptr get_root() const { return root_; }
     bool keep_overflow(node_ptr node);
 
     bool insert(entry_ptr& new_entry) {  
@@ -242,13 +246,83 @@ public:
         return keep_overflow(current_leaf);
     }
 
+
     node_ptr find_leaf(entry_ptr entry, node_ptr curr_node);
     void relate(node_ptr& pa, int pos, node_ptr& child);
     void print_tree() const noexcept;
     void print_tree(node_ptr node, int depth) const noexcept;
     node_ptr promote(node_ptr node);
     std::pair<std::vector<node_ptr>, std::vector<entry_ptr>> pick_promoters(node_ptr& node);
+
+
+    ////////////////////////////////////////////////////////////////////
+
+
+    std::vector<std::pair<typename Params::identifier_type, typename Params::feature_type>> 
+    simple_kNN_search(const entry_ptr& query, int k) {
+        using identifier_type = typename Params::identifier_type;
+        using distance_type = typename Params::feature_type;
+        using ResultPair = std::pair<distance_type, identifier_type>;
+        
+        std::vector<std::pair<identifier_type, distance_type>> results;
+        if (!root_ || k <= 0) return results;
+
+        // Priority queue para mantener los k más cercanos (usamos un max-heap)
+        auto cmp = [](const ResultPair& a, const ResultPair& b) { return a.first < b.first; };
+        std::priority_queue<ResultPair, std::vector<ResultPair>, decltype(cmp)> pq(cmp);
+
+        // Función recursiva lambda
+        std::function<void(const node_ptr&)> search;
+        search = [&](const node_ptr& node) {
+            if (node->is_leaf()) {
+                // Buscar en hojas
+                for (int i = 0; i < node->size_entry(); ++i) {
+                    if (auto entry = node->get_entry(i)) {
+                        distance_type dist = entry->distance_to(*query);
+                        if (pq.size() < static_cast<size_t>(k)) {
+                            pq.emplace(dist, entry->oid);
+                        } else if (dist < pq.top().first) {
+                            pq.pop();
+                            pq.emplace(dist, entry->oid);
+                        }
+                    }
+                }
+            } else {
+                // Buscar en nodos internos
+                for (int i = 0; i < node->size_entry(); ++i) {
+                    if (auto entry = node->get_entry(i)) {
+                        distance_type dist = entry->distance_to(*query);
+                        distance_type radius = entry->get_cover_radius();
+                        distance_type current_max = pq.size() == static_cast<size_t>(k) ? pq.top().first : 
+                                                  std::numeric_limits<distance_type>::max();
+                        
+                        if (dist - radius <= current_max) {
+                            search(entry->get_cover_tree());
+                        }
+                    }
+                }
+            }
+        };
+
+        // Iniciar búsqueda
+        search(root_);
+
+        // Preparar resultados ordenados
+        while (!pq.empty()) {
+            results.emplace_back(pq.top().second, pq.top().first);
+            pq.pop();
+        }
+        std::reverse(results.begin(), results.end());
+        
+        return results;
+    }
+
+
+    ///////////////////////////////////////////////////////////////////////
+
+   
 };
+
 
 template <typename Params>
 auto m_tree<Params>::find_leaf(entry_ptr new_entry, node_ptr curr_node) -> node_ptr {

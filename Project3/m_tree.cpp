@@ -58,6 +58,7 @@ int main() {
     std::vector<double> features7 = {1, 0};
     std::vector<double> features8 = {0, 2};
     std::vector<double> features9 = {3, 2.0};
+    std::vector<double> features10 = {0, 0.0};
     auto tree = make_tree();
     entry_type e1 = make_entry(features1, "0");
     entry_type e2 = make_entry(features2, "1");
@@ -68,8 +69,7 @@ int main() {
     entry_type e7 = make_entry(features7, "6");
     entry_type e8 = make_entry(features8, "7");
     entry_type e9 = make_entry(features9, "8");
-    entry_type e10 = make_entry(features9, "9");
-
+    entry_type e10 = make_entry(features10, "10");
 
     tree->insert(e1);
     tree->insert(e2);
@@ -94,7 +94,13 @@ int main() {
     tree->insert(e9);
     tree->print_tree();
 
-    tree->insert(e10);
-    tree->print_tree();
+    int k = 5;
+    auto results = tree->simple_kNN_search(e10, k);
+
+    for (const auto& [oid, distance] : results) {
+        std::cout << "ID: " << oid << ", Distancia: " << distance << std::endl;
+    }
+
+
     return 0;
 }
