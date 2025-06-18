@@ -52,7 +52,7 @@ public:
     virtual void simple() const { std::cout << "[entry] no-op simple()\n";}
     virtual node_ptr get_cover_tree() { return nullptr;}
     virtual void set_cover_tree(node_ptr new_cover) {}
-
+    virtual distance_type get_cover_radius() { return 0.0;}
 };
 
 template <typename Params>
@@ -98,6 +98,7 @@ public:
     internal_entry(const entry<Params> base_entry, node_ptr new_cover, distance_type new_r)
         : entry<Params>(base_entry), cover_tree(new_cover), radio_covertura(new_r) {}
     node_ptr get_cover_tree() override { return cover_tree;}
+    distance_type get_cover_radius() override {return radio_covertura;}
     void set_cover_tree(node_ptr new_cover) override { cover_tree = new_cover;}
 
     void simple() const override { std::cout << "????" << std::endl;}

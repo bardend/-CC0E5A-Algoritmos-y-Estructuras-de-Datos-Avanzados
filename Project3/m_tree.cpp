@@ -49,15 +49,15 @@ int main() {
     // other->remove_entry(0);
     // other->print_node();
     
-    std::vector<double> features1 = {1.0, 2.0};
-    std::vector<double> features2 = {1.1, 2.0};
-    std::vector<double> features3 = {1.2, 2.0};
-    std::vector<double> features4 = {0.4, 2.0};
-    std::vector<double> features5 = {0.0, 2.0};
-    std::vector<double> features6 = {0.3, 2.0};
-    std::vector<double> features7 = {0.1, 2.0};
-    std::vector<double> features8 = {0.2, 2.0};
-    std::vector<double> features9 = {0.003, 2.0};
+    std::vector<double> features1 = {1.0, 1.0};
+    std::vector<double> features2 = {2.0, 2.0};
+    std::vector<double> features3 = {4, 6};
+    std::vector<double> features4 = {4, 7};
+    std::vector<double> features5 = {1, 8};
+    std::vector<double> features6 = {2, 6.0};
+    std::vector<double> features7 = {1, 0};
+    std::vector<double> features8 = {0, 2};
+    std::vector<double> features9 = {3, 2.0};
     auto tree = make_tree();
     entry_type e1 = make_entry(features1, "0");
     entry_type e2 = make_entry(features2, "1");

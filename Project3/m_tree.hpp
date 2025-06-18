@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cassert>
 #include <vector>
+#include <limits>
 #include <algorithm>
 
 #include "entry.hpp"
@@ -87,15 +88,31 @@ public:
                 current_pos_entry_ = i; 
                 break;
             }
+        std::cout << "Mi nuevo current_pos_entry :" << current_pos_entry_ << std::endl;
         return ret;
     }
     
     int insert_entry(entry_inter_ptr& entry) {
+
+        for(int i = current_pos_entry_; i <= capacity; i++)
+            if(!entries_[i]) {
+                current_pos_entry_ = i;
+                break;
+            }
+
+        std::cout << "Inserta inter-entry en : " << current_pos_entry_ << std::endl; 
         entries_[current_pos_entry_] = entry;
         return update_state_insert();
     }
 
     int insert_entry(entry_ptr& entry) {
+        for(int i = current_pos_entry_; i <= capacity; i++)
+            if(!entries_[i]) {
+                current_pos_entry_ = i;
+                break;
+            }
+
+        std::cout << "Inserta entry en : " << current_pos_entry_ << std::endl; 
         if(is_leaf()) entries_[current_pos_entry_] = make_leaf(*entry);
         else entries_[current_pos_entry_] = make_inter(*entry, nullptr, 1.5);
         return update_state_insert();
@@ -210,17 +227,72 @@ public:
             size_nodes_ = size_entries_ = 1;
             return true;
         }
-        root_->insert_entry(new_entry);
+
+        auto current_leaf = find_leaf(new_entry, root_);
+        std::cout << "---------------------------NEW_ENTRY--------------------" << std::endl;
+        std::cout << new_entry->oid << std::endl;
+        std::cout << "------------------------------------LEAF---------------" << std::endl;
+        current_leaf->print_node();
+
+        std::cout << "----------------------------------AFTER-LEAF---------------" << std::endl;
+        current_leaf->insert_entry(new_entry);
+        current_leaf->print_node();
+
         size_entries_ += 1;
-        return keep_overflow(root_);
+        return keep_overflow(current_leaf);
     }
 
+    node_ptr find_leaf(entry_ptr entry, node_ptr curr_node);
     void relate(node_ptr& pa, int pos, node_ptr& child);
     void print_tree() const noexcept;
     void print_tree(node_ptr node, int depth) const noexcept;
     node_ptr promote(node_ptr node);
     std::pair<std::vector<node_ptr>, std::vector<entry_ptr>> pick_promoters(node_ptr& node);
 };
+
+template <typename Params>
+auto m_tree<Params>::find_leaf(entry_ptr new_entry, node_ptr curr_node) -> node_ptr {
+
+    if (curr_node->is_leaf()) {
+        return curr_node;
+    }
+
+    node_ptr best_candidate = nullptr;
+    distance_type best_distance = std::numeric_limits<distance_type>::max();
+
+    node_ptr fallback_candidate = nullptr;
+    distance_type min_radius_increase = std::numeric_limits<distance_type>::max();
+
+    for (int i = 0; i < capacity; ++i) {
+        auto e = curr_node->get_entry(i);
+        if (!e) continue;
+
+        distance_type d = e->distance_to(*new_entry);
+
+        if (d <= e->get_cover_radius()) {
+            // Este candidato ya cubre al nuevo
+            if (d < best_distance) {
+                best_distance = d;
+                best_candidate = e->get_cover_tree();
+            }
+        } else {
+            // No cubre, calcular cuánto se tendría que aumentar el radio
+            distance_type radius_increase = d - e->get_cover_radius();
+            if (radius_increase < min_radius_increase) {
+                min_radius_increase = radius_increase;
+                fallback_candidate = e->get_cover_tree();
+            }
+        }
+    }
+
+    if (best_candidate) {
+        return find_leaf(new_entry, best_candidate);
+    } 
+    return find_leaf(new_entry, fallback_candidate);
+     
+    assert("No deberia llegar aqui");
+}
+
 
 template <typename Params>
 auto m_tree<Params>::promote(node_ptr node) -> node_ptr {
@@ -322,11 +394,18 @@ std::pair<std::vector<node_ptr>, std::vector<entry_ptr>> {
     for(int i = 0; i < 2; i++) {
         distance_type new_cover_radius = 0.0; 
         int pos = pos_promote[i]; //en que posicion se guardo el 
+        int ii = 0;
         for(auto id : partition[i]) {
             std::cout << "medir :" << picks[i] << " ----> " << id << std::endl;
-            if(id == picks[i])continue;
+            std::cout << "pos  :" << pos << std::endl;
+            if(id == picks[i]) {
+                ii++;
+                continue;
+            }
             new_cover_radius = std::max(new_cover_radius, 
-            ptr_covert_trees[i]->get_entry(pos)->distance_to(*ptr_covert_trees[i]->get_entry(id)));
+            ptr_covert_trees[i]->get_entry(pos)->distance_to(*ptr_covert_trees[i]->get_entry(ii)));
+            std::cout << "radio :" << new_cover_radius << std::endl;
+            ii+=1;
         }
 
         std::cout << "pos - hijo - promotor :" << pos_promote[i] << std::endl;
