@@ -51,18 +51,30 @@ int main() {
     
     std::vector<double> features1 = {1.0, 2.0};
     auto tree = make_tree();
-    entry_type e1 = make_entry(features1, "1");
-    entry_type e2 = make_entry(features1, "2");
-    entry_type e3 = make_entry(features1, "3");
-    entry_type e4 = make_entry(features1, "4");
-    entry_type e5 = make_entry(features1, "5");
+    entry_type e1 = make_entry(features1, "0");
+    entry_type e2 = make_entry(features1, "1");
+    entry_type e3 = make_entry(features1, "2");
+    entry_type e4 = make_entry(features1, "3");
+    entry_type e5 = make_entry(features1, "4");
+    entry_type e6 = make_entry(features1, "4");
+    entry_type e7 = make_entry(features1, "4");
+    entry_type e8 = make_entry(features1, "4");
+    entry_type e9 = make_entry(features1, "4");
 
     tree->insert(e1);
     tree->insert(e2);
     tree->insert(e3);
+    tree->print_tree();
     tree->insert(e4);
     tree->print_tree();
-    // tree->insert(e5);
+    tree->insert(e5);
+    tree->print_tree();
+    tree->insert(e6);
+    tree->insert(e7);
+    tree->print_tree();
+    tree->insert(e8);
+    tree->insert(e9);
+    tree->print_tree();
     
     return 0;
 }

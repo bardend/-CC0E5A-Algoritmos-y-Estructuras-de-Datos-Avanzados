@@ -32,6 +32,7 @@ public:
     using identifier_type = typename Params::identifier_type;
     using distance_type = typename Params::feature_type; // Retorna lo mismo que los features :)
     using metric_space_t = metric_space<Params>; 
+    using node_ptr = std::shared_ptr<node<Params>>;
     identifier_type oid;
     int pos;
 protected:
@@ -47,6 +48,11 @@ public:
     distance_type distance_to(const entry& other, const metric_space_t& metric = metric_space_t()) const {
         return metric(features_, other.features_);
     }
+
+    virtual void simple() const { std::cout << "[entry] no-op simple()\n";}
+    virtual node_ptr get_cover_tree() { return nullptr;}
+    virtual void set_cover_tree(node_ptr new_cover) {}
+
 };
 
 template <typename Params>
@@ -85,12 +91,16 @@ class internal_entry : public entry<Params> {
 public: 
     using node_ptr = std::shared_ptr<node<Params>>;
     using distance_type = typename entry<Params>::distance_type;
-    node_ptr cover_tree;  // Ahora es público para acceso directo
+    node_ptr cover_tree=nullptr;  // Ahora es público para acceso directo
 private:
     distance_type radio_covertura;
 public: 
     internal_entry(const entry<Params> base_entry, node_ptr new_cover, distance_type new_r)
         : entry<Params>(base_entry), cover_tree(new_cover), radio_covertura(new_r) {}
+    node_ptr get_cover_tree() override { return cover_tree;}
+    void set_cover_tree(node_ptr new_cover) override { cover_tree = new_cover;}
+
+    void simple() const override { std::cout << "????" << std::endl;}
 };
 
 template <typename Params>
