@@ -94,13 +94,5 @@ int main() {
     tree->insert(e9);
     tree->print_tree();
 
-    int k = 5;
-    auto results = tree->simple_kNN_search(e10, k);
-
-    for (const auto& [oid, distance] : results) {
-        std::cout << "ID: " << oid << ", Distancia: " << distance << std::endl;
-    }
-
-
     return 0;
 }

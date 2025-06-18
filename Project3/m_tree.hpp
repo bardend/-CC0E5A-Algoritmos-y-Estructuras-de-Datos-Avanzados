@@ -8,6 +8,7 @@
 #include <vector>
 #include <limits>
 #include <algorithm>
+#include <set>
 
 #include <algorithm>
 #include <queue>
@@ -66,8 +67,8 @@ public:
             return nullptr;
         }
     }
-    // Setea el entry de la posicion (pos) un nuevo cover_tree
-    //pa->set_cover_tree(pos, child);
+    // 1. el entry i-simo (pos) setearemos para que tenga un nuevo cover-tree
+    
     void set_cover_tree(int pos, node_ptr new_cover_tree) {
         if (auto* internal = dynamic_cast<internal_entry<Params>*>(entries_[pos].get())) 
             entries_[pos]->set_cover_tree(new_cover_tree);
@@ -78,10 +79,26 @@ public:
     void set_father_entry(entry_ptr& entry) { father_entry_ = entry;}
     void set_father_entry(entry_inter_ptr& entry) { father_entry_ = entry;}
 
-    node_ptr& get_father_node() { return fields_.father;}
-    entry_ptr& get_father_entry() { return father_entry_;}
-    int get_pos_entry(int i) { return entries_[i]->get_pos();}
 
+    // Fuerza bruta
+    void set_father_entry(node_ptr papa) {
+        std::set<std::string>st;
+        for(int i = 0; i < capacity; i++)
+            st.insert(entries_[i]->oid);
+
+        for(int i = 0; i < capacity; i++) {
+            if(st.count(papa->get_entry(i)->oid))
+                set_father_entry(papa->get_entry(i));
+                break;
+        }
+    }
+
+    node_ptr get_father_node() { return fields_.father;}
+    entry_ptr get_father_entry() { return father_entry_;}
+
+
+    //Esto es importante ----> Porque necesito que posicion esta en el nodo;
+    int get_pos_entry(int i) { return entries_[i]->get_pos();}
 
     int update_state_insert() {
         size_entry_++;
@@ -96,26 +113,13 @@ public:
         return ret;
     }
     
-    int insert_entry(entry_inter_ptr& entry) {
-
-        for(int i = current_pos_entry_; i <= capacity; i++)
-            if(!entries_[i]) {
-                current_pos_entry_ = i;
-                break;
-            }
-
+    int insert_entry(entry_inter_ptr entry) {
         std::cout << "Inserta inter-entry en : " << current_pos_entry_ << std::endl; 
         entries_[current_pos_entry_] = entry;
         return update_state_insert();
     }
 
     int insert_entry(entry_ptr& entry) {
-        for(int i = current_pos_entry_; i <= capacity; i++)
-            if(!entries_[i]) {
-                current_pos_entry_ = i;
-                break;
-            }
-
         std::cout << "Inserta entry en : " << current_pos_entry_ << std::endl; 
         if(is_leaf()) entries_[current_pos_entry_] = make_leaf(*entry);
         else entries_[current_pos_entry_] = make_inter(*entry, nullptr, 1.5);
@@ -136,15 +140,17 @@ public:
         entries_[i]->set_pos(i);
         other->entries_[j]->set_pos(j);
     }
+
     void swap_entry(int i, node_ptr& other) {
         //assert(other != this);
         params_type::swap(entries_[i], other->entries_[i]);
     }
+
     void swap_entry(int i, int j) {
         assert(i != j);
         params_type::swap(entries_[i], entries_[j]);
-        entries_[i]->set_pos(j);
-        entries_[j]->set_pos(i);
+        entries_[i]->set_pos(i);
+        entries_[j]->set_pos(j);
     }
 
     // Move entry i in this node to entry j in node other
@@ -155,6 +161,14 @@ public:
         entries_[i].reset();
         other->entries_[j]->set_pos(j);
         other->size_entry_+= 1;
+
+        int init = other->current_pos_entry_;
+        for(int i = init; i < capacity + 1; i++) {
+            if(!(other->entries_[i])) {
+                other->current_pos_entry_ = i;
+                break;
+            }
+        }
 
         current_pos_entry_ = std::min(current_pos_entry_, i);
         size_entry_--;
@@ -179,16 +193,21 @@ public:
     node_ptr split_after_promote(int id, std::vector<int>partition, int& x);
 };
 
+/* 
+ * 1. tenemos los indices del nodo en partition para crear un nuevo nodo
+ * 2. ind_o1 es tambien un indice del nodo para crear un nuevo nodo
+ * 3. Esta funcion esta bien
+ */
 
 template<typename Params>
 auto node<Params>::split_after_promote(int ind_o1, std::vector<int>partition, int& x) -> node_ptr {
 
-    std::cout << "Llegamos a split_after_promote" << std::endl;
-    std::cout << "ind_o1: "<< ind_o1 << std::endl;
     for(auto e: partition) 
         std::cout << e << " ";
+
     std::cout<<std::endl;
     auto new_sibling = std::make_shared<node<Params>>(is_leaf());
+
     for(int i = 0; i < (int)partition.size(); i++) {
         this->move_entry(partition[i], new_sibling, i);
         if(ind_o1 == partition[i]) {
@@ -198,7 +217,6 @@ auto node<Params>::split_after_promote(int ind_o1, std::vector<int>partition, in
             assert(x==i);
         }
     }
-
     return new_sibling;
 }
 
@@ -237,11 +255,9 @@ public:
         std::cout << new_entry->oid << std::endl;
         std::cout << "------------------------------------LEAF---------------" << std::endl;
         current_leaf->print_node();
-
         std::cout << "----------------------------------AFTER-LEAF---------------" << std::endl;
         current_leaf->insert_entry(new_entry);
         current_leaf->print_node();
-
         size_entries_ += 1;
         return keep_overflow(current_leaf);
     }
@@ -274,12 +290,15 @@ public:
         // Función recursiva lambda
         std::function<void(const node_ptr&)> search;
         search = [&](const node_ptr& node) {
+            std::cout <<"_______________________________________________________" << std::endl;
             if (node->is_leaf()) {
                 // Buscar en hojas
-                for (int i = 0; i < node->size_entry(); ++i) {
+                for (int i = 0; i < node->capacity; ++i) {
                     if (auto entry = node->get_entry(i)) {
                         distance_type dist = entry->distance_to(*query);
-                        if (pq.size() < static_cast<size_t>(k)) {
+                        std::cout << "HOja :" << entry->oid << std::endl;
+                        std::cout << "Dis :" << dist << std::endl;
+                        if ((int)pq.size() < k) {
                             pq.emplace(dist, entry->oid);
                         } else if (dist < pq.top().first) {
                             pq.pop();
@@ -287,18 +306,20 @@ public:
                         }
                     }
                 }
-            } else {
-                // Buscar en nodos internos
-                for (int i = 0; i < node->size_entry(); ++i) {
+            } 
+
+            else {
+                for (int i = 0; i < node->capacity; ++i) {
                     if (auto entry = node->get_entry(i)) {
                         distance_type dist = entry->distance_to(*query);
                         distance_type radius = entry->get_cover_radius();
-                        distance_type current_max = pq.size() == static_cast<size_t>(k) ? pq.top().first : 
+
+                        distance_type current_max = (int)pq.size()==k  ? pq.top().first : 
                                                   std::numeric_limits<distance_type>::max();
-                        
-                        if (dist - radius <= current_max) {
-                            search(entry->get_cover_tree());
-                        }
+
+                        std:: cout << "current_node :" << entry->oid << std::endl;
+                        std:: cout << "dis - rad :" << dist << " " << radius << std::endl;
+                        search(entry->get_cover_tree());
                     }
                 }
             }
@@ -326,6 +347,9 @@ public:
 
 template <typename Params>
 auto m_tree<Params>::find_leaf(entry_ptr new_entry, node_ptr curr_node) -> node_ptr {
+
+    std::cout << "------------------------PRINT_NODE_FIND_LEAF----------------------------" << std::endl;
+    curr_node->print_node();
 
     if (curr_node->is_leaf()) {
         return curr_node;
@@ -367,17 +391,30 @@ auto m_tree<Params>::find_leaf(entry_ptr new_entry, node_ptr curr_node) -> node_
     assert("No deberia llegar aqui");
 }
 
+/*
+ * 1. Creo un ancestor_node si es root creo un nuevo padre, sino fue mi padre.
+ * 2. Remuevo el entry-padre del nodo
+ * 3. pick_promoters tengo los_nodos promotores que tengo que anadir y sus respectivos covers_tree
+ * 4. al anadir los nuevos entry guardas sus posiciones.
+ * 5. con esas posiciones puedo acceder a las entry para setear su cover_tree
+ */
 
 template <typename Params>
 auto m_tree<Params>::promote(node_ptr node) -> node_ptr {
     auto ancestor_node = (node == root_ ? make_node(false) : node->get_father_node());
 
-    if(node != root_) 
+    std::cout << "=============================================" << std::endl;
+    node->print_node();
+    if(node != root_)  {
+        ancestor_node->print_node();
         ancestor_node->remove_entry(node->get_father_entry()->get_pos());
+        ancestor_node->print_node();
+    }
     
+    std::cout <<"IDS _--------------------------------------" <<std::endl;
     auto [new_covers, new_entries] = pick_promoters(node);
 
-    std::cout <<"IDS _--------------------------------------" <<std::endl;
+
     for(auto e: new_entries)
         std::cout << e->oid << " ";
 
@@ -394,11 +431,19 @@ auto m_tree<Params>::promote(node_ptr node) -> node_ptr {
     return ancestor_node;
 }
 
+/*
+ * Esta funcion solo promote del nodo y pasa a su succesor guardando los parentescos
+ */
+
 template <typename Params>
 auto m_tree<Params>::keep_overflow(node_ptr node) ->bool{ 
 
-    while(node->get_father_node() and node->is_overflow()) 
+    while(node->get_father_node() and node->is_overflow()) {
+        std::cout << "--------------------EN EL WHILE--------------------" << std::endl;
+        node->print_node();
         node = promote(node);
+
+    }
 
     if(not (node->is_overflow())) return true;
     std::cout << "Imprimimos arbol antes de crear un nuevo nodo" << std::endl;
@@ -409,6 +454,14 @@ auto m_tree<Params>::keep_overflow(node_ptr node) ->bool{
     return true;
 }
 
+
+/*
+ * 1. el entry i-simo (pos) setearemos para que tenga un nuevo cover-tree
+ * 2. child solo seteamos father
+ * 3. child seteamos el cover_tree
+ */
+
+//relate(ancestor_node, positions[i], new_covers[i]);
 template <typename Params>
 auto m_tree<Params>::relate(node_ptr& pa, int pos, node_ptr& child) -> void {
     std::cout << "Que vamos a relacionar :)" << std::endl;
@@ -417,12 +470,24 @@ auto m_tree<Params>::relate(node_ptr& pa, int pos, node_ptr& child) -> void {
     std::cout << "Vamos a fijar el entry_padre " << std::endl;
     pa->print_node();
     child->print_node();
-    std::cout << "pos_entry_padre :" <<  pa->get_entry(pos)->oid << std::endl;
-
+    std::cout << "id_entry_padre :" <<  pa->get_entry(pos)->oid << std::endl;
+    std::cout << "pos_entry_padre :" << pa->get_entry(pos)->get_pos() << std::endl;
     pa->set_cover_tree(pos, child);
+
     child->set_father_node(pa);
     child->set_father_entry(pa->get_entry(pos)); // Asumiendo que necesitas esto
+
 }
+
+
+/*
+ * 1. heuristica tomo los extremos, como el nodo esta full :), la posicion (0, node->size_entry()-1);
+ * 2. genero particiones de indices, recuerda de indices
+ * 3. split del nodo pero se perderan las posiciones, pero los nuevos nodos tendran posiciones crecientes 0,,1,2,3,...,
+ * 4. pos es la posicion que guarda el promote en esa particion
+ * 5. genero un nuevo nodo que sera promotor, el cual esta en pos, apunta a ptr_covert_tree, radio_es maximo
+ * 6. retorno los covers_tree y los nuevos entry promotores actualizados
+ */
 
 
 template <typename Params>
@@ -439,20 +504,26 @@ std::pair<std::vector<node_ptr>, std::vector<entry_ptr>> {
     for(int i = 0; i < node->size_entry(); i++) {
         int id_partition = (node->get_entry(picks[0])->distance_to(*node->get_entry(i))  <
                            node->get_entry(picks[1])->distance_to(*node->get_entry(i)) ? 0 : 1);
+        std::cout << i << "-> ";
 
-        std::cout << "partion - ele-in-partition:" << id_partition << " " << i << std::endl;
+        if(id_partition == 0) std::cout << "primer :) " << std::endl;
+        else std::cout << "segundo :) " << std::endl;
         partition[id_partition].push_back(node->get_pos_entry(i));
     }
 
-    std::cout << "Partitions :) " << std::endl;
-
+    std::vector<node_ptr> mis_hijos[2];
     for(int i = 0; i < 2; i++) {
-        std::cout << picks[i] << " : ";
-        for(auto e: partition[i]) {
-            std::cout << e << " ";
+        for(auto e:partition[i]) {
+            mis_hijos[i].push_back(node->get_entry(e)->get_cover_tree());
         }
-        std::cout <<" " <<std::endl;
     }
+
+    // child->set_father_node(pa);
+    // child->set_father_entry(pa->get_entry(pos)); // Asumiendo que necesitas esto
+
+    //        mis_hijos[i].push_back(node->get_entry(partition[i])
+
+
 
     std::vector<int>pos_promote(2);
     std::vector<node_ptr>ptr_covert_trees(2);
@@ -460,22 +531,32 @@ std::pair<std::vector<node_ptr>, std::vector<entry_ptr>> {
         int r;
         ptr_covert_trees[i] = node->split_after_promote(picks[i], partition[i], r);
         ptr_covert_trees[i]->print_node();
-        pos_promote[i] =r;
+        pos_promote[i] = r;
+
+        for(auto e : mis_hijos[i]) 
+            if(e) {
+                std::cout << "MI HIJOOOOOOOOOOOOOOO" << std::endl;
+                e->print_node();
+                e->set_father_node(ptr_covert_trees[i]);
+                //e->set_father_entry(ptr_covert_trees[i]);
+            }
     }
 
 
     std::vector<entry_ptr>ptr_entrys;
     for(int i = 0; i < 2; i++) {
         distance_type new_cover_radius = 0.0; 
-        int pos = pos_promote[i]; //en que posicion se guardo el 
+        int pos = pos_promote[i]; //en que posicion se guardo en esta particion;
         int ii = 0;
+
         for(auto id : partition[i]) {
             std::cout << "medir :" << picks[i] << " ----> " << id << std::endl;
             std::cout << "pos  :" << pos << std::endl;
             if(id == picks[i]) {
                 ii++;
                 continue;
-            }
+        }
+            //Esto genera duda
             new_cover_radius = std::max(new_cover_radius, 
             ptr_covert_trees[i]->get_entry(pos)->distance_to(*ptr_covert_trees[i]->get_entry(ii)));
             std::cout << "radio :" << new_cover_radius << std::endl;
@@ -495,6 +576,7 @@ template <typename Params>
 void m_tree<Params>::print_tree(node_ptr node, int depth) const noexcept {
     if (!node) return;
 
+    std::cout << "yoooooooooooooooo soyyyyy -------------" << std::endl;
     std::string indent(depth * 8, ' ');
     std::cout << indent << "[";
 
@@ -506,6 +588,13 @@ void m_tree<Params>::print_tree(node_ptr node, int depth) const noexcept {
         }
     }
     std::cout << "]\n";
+
+
+    if(node->get_father_node()){ 
+        std::cout << "Y yo vengo del padre : ---------------------"  << std::endl;
+        node->get_father_node()->print_node();
+    }
+
 
     if (!node->is_leaf()) {
         for (int i = 0; i < Params::cap_node + 1; ++i) {
