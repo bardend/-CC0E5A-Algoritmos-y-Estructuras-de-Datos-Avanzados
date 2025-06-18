@@ -21,6 +21,7 @@ public:
     using entry_inter_ptr = std::shared_ptr<internal_entry<Params>>;
     static constexpr int capacity =  Params::cap_node;
   	typedef Params params_type;
+    using distance_type = typename Params::feature_type; // Retorna lo mismo que los features :)
 
 private:
     struct base_fields {
@@ -46,7 +47,10 @@ public:
     bool empty() const noexcept {return size_entry_ == 0;}
     int size_entry() const noexcept { return size_entry_;}
 
-    entry_ptr& get_entry(int i) { assert(i >= 0 and i < capacity+1);  return entries_[i]; }
+    entry_ptr& get_entry(int i) {
+        assert(i >= 0 and i < capacity+1);
+        return entries_[i];
+    }
 
     node_ptr cover_tree(int pos) { 
         assert(pos>= 0 and pos < capacity+1); 
@@ -151,30 +155,30 @@ public:
         std::cout << std::endl << std::endl;
     }
 
-    std::pair<node_ptr, node_ptr> split_after_promote(int ind_o1, int ind_o2);
+    node_ptr split_after_promote(int id, std::vector<int>partition, int& x);
 };
 
 
-template <typename Params>
-auto node<Params>::split_after_promote(int ind_o1, int ind_o2) -> std::pair<node_ptr, node_ptr> {
+template<typename Params>
+auto node<Params>::split_after_promote(int ind_o1, std::vector<int>partition, int& x) -> node_ptr {
 
-    int n = size_entry();
-    int mid = n/2;
-    std::vector<int>ids1; 
-    std::vector<int>ids2;
-    for(int i = 0; i < mid; i++) ids1.push_back(i);
-    for(int i = mid; i < n; i++) ids2.push_back(i);
-
-    //Make sure p1, p2 are partition of entries of this node;
-    assert((int)ids1.size() + (int)ids2.size() == n); 
-    //Here I leave with p1 partion and create a new node for p2;
+    std::cout << "Llegamos a split_after_promote" << std::endl;
+    std::cout << "ind_o1: "<< ind_o1 << std::endl;
+    for(auto e: partition) 
+        std::cout << e << " ";
+    std::cout<<std::endl;
     auto new_sibling = std::make_shared<node<Params>>(is_leaf());
+    for(int i = 0; i < (int)partition.size(); i++) {
+        this->move_entry(partition[i], new_sibling, i);
+        if(ind_o1 == partition[i]) {
+            std::cout << "La posicion agregada en el nuevo ptr es :" << i << std::endl;
+            std::cout << "Reafirmamos :" << new_sibling->get_entry(i)->get_pos() << std::endl;
+            x = new_sibling->get_entry(i)->get_pos();
+            assert(x==i);
+        }
+    }
 
-    for(int i = 0; i < (int)ids2.size(); i++) 
-        this->move_entry(ids2[i], new_sibling, i);
-
-    // Usar this-> para acceder al método de la clase base
-    return std::make_pair(this->shared_from_this(), new_sibling);
+    return new_sibling;
 }
 
 template <typename Params>
@@ -183,6 +187,7 @@ public:
     using node_ptr = std::shared_ptr<node<Params>>;
     using entry_ptr = std::shared_ptr<entry<Params>>;
     static constexpr int capacity =  Params::cap_node;
+    using distance_type = typename Params::feature_type; // Retorna lo mismo que los features :)
 
 private:
     node_ptr root_;
@@ -203,20 +208,18 @@ public:
             root_ = std::make_shared<node<Params>>(true);
             root_->insert_entry(new_entry);
             size_nodes_ = size_entries_ = 1;
-            std::cout << "Insertamos" << std:: endl;
             return true;
         }
-        //find :)
         root_->insert_entry(new_entry);
+        size_entries_ += 1;
         return keep_overflow(root_);
     }
 
-    std::pair<int, int>pick_promoters(node_ptr& node);
     void relate(node_ptr& pa, int pos, node_ptr& child);
     void print_tree() const noexcept;
     void print_tree(node_ptr node, int depth) const noexcept;
     node_ptr promote(node_ptr node);
-
+    std::pair<std::vector<node_ptr>, std::vector<entry_ptr>> pick_promoters(node_ptr& node);
 };
 
 template <typename Params>
@@ -226,70 +229,114 @@ auto m_tree<Params>::promote(node_ptr node) -> node_ptr {
     if(node != root_) 
         ancestor_node->remove_entry(node->get_father_entry()->get_pos());
     
-    auto [o1, o2] = pick_promoters(node);
-    std::cout << "Los promotores son :" << o1 << " " << o2 <<std::endl;
-    auto oi = make_inter(*node->get_entry(o1), nullptr, 1.5);
-    auto oj = make_inter(*node->get_entry(o2), nullptr, 2.5);
+    auto [new_covers, new_entries] = pick_promoters(node);
 
-    std::cout << "El valor es :" << oi->oid << std::endl;
-    std::cout << "El valor es :" << oj->oid << std::endl;
+    std::cout <<"IDS _--------------------------------------" <<std::endl;
+    for(auto e: new_entries)
+        std::cout << e->oid << " ";
 
-    int pos1 = ancestor_node->insert_entry(oi);
-    int pos2 = ancestor_node->insert_entry(oj);
+    std::cout << " " << std::endl;
 
-    auto [l, r] = node->split_after_promote(o1, o2);
-    l->print_node();
-    r->print_node();
-    std::cout << "----------------------EL new_root--------------------" << std::endl;
-    ancestor_node->print_node();
-    std::cout  << "Pos :" << pos1 << " " << pos2 << std::endl;
-    relate(ancestor_node, pos1, l);
-    relate(ancestor_node, pos2, r);
+    std::vector<int>positions;
+    for(auto entry: new_entries)
+        positions.push_back(ancestor_node->insert_entry(entry));
+
+    for(int i = 0; i <(int)positions.size(); i++)
+        relate(ancestor_node, positions[i], new_covers[i]);
+
+    size_nodes_ += 2;
     return ancestor_node;
 }
 
 template <typename Params>
 auto m_tree<Params>::keep_overflow(node_ptr node) ->bool{ 
 
-    while(node->get_father_node() and node->is_overflow()) {
+    while(node->get_father_node() and node->is_overflow()) 
         node = promote(node);
-        // node->get_father_node()->remove_entry(node->get_father_entry()->get_pos());
-        // auto [o1, o2] = pick_promoters(node);
-        //
-        // std::cout << "Los promotores son :" << o1 << " " << o2 <<std::endl;
-        //
-        // auto oi = make_inter(*node->get_entry(o1), nullptr, 1.5);
-        // auto oj = make_inter(*node->get_entry(o2), nullptr, 2.5);
-        //
-        // int pos1 = node->get_father_node()->insert_entry(oi);
-        // int pos2 = node->get_father_node()->insert_entry(oj);
-        // auto [l, r] = node->split_after_promote(o1, o2);
-        //
-        // relate(node->get_father_node(), pos1, l);
-        // relate(node->get_father_node(), pos2, r);
-        // node = node->get_father_node();
-    }
 
     if(not (node->is_overflow())) return true;
+    std::cout << "Imprimimos arbol antes de crear un nuevo nodo" << std::endl;
+    print_tree();
     root_ = promote(root_);
-    size_nodes_ += 2;
+    std::cout << "Imprimimos arbol despues new_root nodo" << std::endl;
+    print_tree();
     return true;
 }
 
 template <typename Params>
 auto m_tree<Params>::relate(node_ptr& pa, int pos, node_ptr& child) -> void {
+    std::cout << "Que vamos a relacionar :)" << std::endl;
+    std::cout << "Vamos a relacionar pa set_cover_tree " << std::endl;
+    std::cout << "child vamos a fijar pa como padre " << std::endl;
+    std::cout << "Vamos a fijar el entry_padre " << std::endl;
+    pa->print_node();
+    child->print_node();
+    std::cout << "pos_entry_padre :" <<  pa->get_entry(pos)->oid << std::endl;
+
     pa->set_cover_tree(pos, child);
     child->set_father_node(pa);
     child->set_father_entry(pa->get_entry(pos)); // Asumiendo que necesitas esto
 }
 
-template <typename Params>
-auto m_tree<Params>::pick_promoters(node_ptr& node) ->  std::pair<int, int>{
-    //falta una heuristica para definir los promotores :)
-    int oi = 0, oj = node->size_entry()-1;
-    return std::make_pair(oi, oj);
-}
 
+template <typename Params>
+auto m_tree<Params>::pick_promoters(node_ptr& node) ->
+std::pair<std::vector<node_ptr>, std::vector<entry_ptr>> {
+    assert(node->size_entry() == node->capacity+1);
+    std::vector<int>picks(2);
+
+    picks[0] = 0, picks[1] = node->size_entry()-1;
+
+    std::cout << "picks : " << picks[0] << " " << picks[1] << std::endl;
+
+    std::vector<int>partition[2];
+    for(int i = 0; i < node->size_entry(); i++) {
+        int id_partition = (node->get_entry(picks[0])->distance_to(*node->get_entry(i))  <
+                           node->get_entry(picks[1])->distance_to(*node->get_entry(i)) ? 0 : 1);
+
+        std::cout << "partion - ele-in-partition:" << id_partition << " " << i << std::endl;
+        partition[id_partition].push_back(node->get_pos_entry(i));
+    }
+
+    std::cout << "Partitions :) " << std::endl;
+
+    for(int i = 0; i < 2; i++) {
+        std::cout << picks[i] << " : ";
+        for(auto e: partition[i]) {
+            std::cout << e << " ";
+        }
+        std::cout <<" " <<std::endl;
+    }
+
+    std::vector<int>pos_promote(2);
+    std::vector<node_ptr>ptr_covert_trees(2);
+    for(int i = 0; i < 2; i++) {
+        int r;
+        ptr_covert_trees[i] = node->split_after_promote(picks[i], partition[i], r);
+        ptr_covert_trees[i]->print_node();
+        pos_promote[i] =r;
+    }
+
+
+    std::vector<entry_ptr>ptr_entrys;
+    for(int i = 0; i < 2; i++) {
+        distance_type new_cover_radius = 0.0; 
+        int pos = pos_promote[i]; //en que posicion se guardo el 
+        for(auto id : partition[i]) {
+            std::cout << "medir :" << picks[i] << " ----> " << id << std::endl;
+            if(id == picks[i])continue;
+            new_cover_radius = std::max(new_cover_radius, 
+            ptr_covert_trees[i]->get_entry(pos)->distance_to(*ptr_covert_trees[i]->get_entry(id)));
+        }
+
+        std::cout << "pos - hijo - promotor :" << pos_promote[i] << std::endl;
+        auto oi = make_inter(*ptr_covert_trees[i]->get_entry(pos), ptr_covert_trees[i] , new_cover_radius);
+        ptr_entrys.push_back(oi);
+    }
+    std::cout << "ok2" << std::endl;
+
+    return  {ptr_covert_trees, ptr_entrys};
+}
 
 template <typename Params>
 void m_tree<Params>::print_tree(node_ptr node, int depth) const noexcept {
@@ -311,7 +358,6 @@ void m_tree<Params>::print_tree(node_ptr node, int depth) const noexcept {
         for (int i = 0; i < Params::cap_node + 1; ++i) {
             auto entry = node->get_entry(i);
             if(entry) {
-                std::cout << "llega aca" << std::endl;
                 print_tree(node->cover_tree(i), depth + 1);
             }
         }
@@ -321,8 +367,10 @@ void m_tree<Params>::print_tree(node_ptr node, int depth) const noexcept {
 template <typename Params>
 void m_tree<Params>::print_tree() const noexcept {
 
-    std::cout << "==================================================================================================" << std::endl;
+    std::cout << "==============***********************************************************=======" << std::endl;
     print_tree(root_, 0);
+
+    std::cout << "==============***********************************************************=======" << std::endl;
 }
 
 #endif // M_TREE_HPP
