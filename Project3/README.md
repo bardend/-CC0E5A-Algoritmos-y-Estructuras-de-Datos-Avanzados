@@ -1,11 +1,6 @@
-# M-Tree: Presentación Académica 🌳
+# **M-Tree distribuido (cliente-servidor ligero) con sincronización vía HTTP**
 
 Una presentación completa sobre **M-Tree** (Árbol Métrico), estructura de datos fundamental para búsquedas eficientes en espacios métricos.
-
-## 👥 Autores
-
-- **Ricardo Andre Ulloa Vega**
-- **Jose Joaquin Leon Tello**
 
 ## 📋 Descripción
 
@@ -44,3 +39,4 @@ Para preguntas, sugerencias o colaboraciones:
 - **Ricardo Andre Ulloa Vega** 
 - **Jose Leon Tello** 
 
+## 
