@@ -96,14 +96,5 @@ int main() {
     tree->insert(e9);
     tree->print_tree();
 
-    std::vector<double> features = {9, 6};
-    double add = 1.03;
-    for(int i = 0; i <10000; i++) {
-        entry_type x = make_entry(features9, "@"+i);
-        features[0] += add;
-        features[1] += add;
-        tree->insert(x);
-
-    }
     return 0;
 }
