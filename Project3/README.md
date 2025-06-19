@@ -28,6 +28,29 @@ Desde el punto de vista del rendimiento, si tenemos datos con un número alto de
   - Entradas hoja: `entry(Oj) = [Oj, oid(Oj), d(Oj, P(Oj))]`
   - Entradas internas: `entry(Or) = [Or, ptr(T(Or)), r(Or), d(Or, P(Or))]`
 
+Cabe resaltar que, en el *paper*, las **entradas internas deben actualizarse cada vez que se realiza una operación de split cuando un nodo está saturado (`overflow`).** En este proceso, se promueven dos nodos mediante diversas heurísticas que buscan **evitar el solapamiento** (*overlap*) entre las entradas internas.
+
+La métrica utilizada consiste en **hallar los puntos más lejanos** entre todos los candidatos, con el fin de maximizar la separación.
+
+Una vez realizada dicha elección, para asegurarnos de que el **radio del nodo padre** cubre completamente su subárbol, se debe aplicar la siguiente expresión:
+$$
+r(Op_1) = \max\{ d(O_j, Op_1) \mid O_j \in N_1 \}
+$$
+Por cada *split*, este radio puede actualizarse recursivamente hacia los niveles superiores, garantizando que **todos los nodos internos incluyan completamente a su subárbol** dentro del *cover tree*:
+$$
+r(Op_1) = \max\{ d(O_j, Op_1) + r(O_j) \mid O_j \in N_1 \}
+$$
+
+------
+
+
+
+Una gráfica para tener una noción :
+
+![](/home/bardend/m_tree.png)
+
+
+
 ### 🏗️ **Sección 3: Poda en el Árbol**
 
 Porciones de código de `k-NN NodeSearch(N: M-tree node, Q: query object, k: integer)`:
@@ -43,6 +66,8 @@ then {
 ```
 
 Antes de empezar a buscar en cada nodo, verificamos esta condicional (1). Esto se debe a las propiedades de los espacios métricos. Además, la distancia preprocesada durante la construcción genera una forma eficiente de búsqueda, evitando instanciar el objeto y trabajando únicamente con **indexación**.
+
+
 
 ### **Algoritmos con Complejidad Optimizada**
 - **Inserción**: `O(log n)` promedio.
