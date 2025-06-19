@@ -58,7 +58,9 @@ int main() {
     std::vector<double> features7 = {1, 0};
     std::vector<double> features8 = {0, 2};
     std::vector<double> features9 = {3, 2.0};
+
     std::vector<double> features10 = {0, 0.0};
+
     auto tree = make_tree();
     entry_type e1 = make_entry(features1, "0");
     entry_type e2 = make_entry(features2, "1");
@@ -94,5 +96,14 @@ int main() {
     tree->insert(e9);
     tree->print_tree();
 
+    std::vector<double> features = {9, 6};
+    double add = 1.03;
+    for(int i = 0; i <10000; i++) {
+        entry_type x = make_entry(features9, "@"+i);
+        features[0] += add;
+        features[1] += add;
+        tree->insert(x);
+
+    }
     return 0;
 }

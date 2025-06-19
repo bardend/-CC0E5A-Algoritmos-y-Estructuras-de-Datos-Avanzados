@@ -524,9 +524,11 @@ std::pair<std::vector<node_ptr>, std::vector<entry_ptr>> {
     //        mis_hijos[i].push_back(node->get_entry(partition[i])
 
 
-
     std::vector<int>pos_promote(2);
     std::vector<node_ptr>ptr_covert_trees(2);
+
+
+
     for(int i = 0; i < 2; i++) {
         int r;
         ptr_covert_trees[i] = node->split_after_promote(picks[i], partition[i], r);
@@ -540,8 +542,9 @@ std::pair<std::vector<node_ptr>, std::vector<entry_ptr>> {
                 e->set_father_node(ptr_covert_trees[i]);
                 //e->set_father_entry(ptr_covert_trees[i]);
             }
+        std::cout << "=======================))))))))))))))))))))))))=====================" << std::endl;
+        ptr_covert_trees[i]->print_node();
     }
-
 
     std::vector<entry_ptr>ptr_entrys;
     for(int i = 0; i < 2; i++) {
@@ -563,7 +566,8 @@ std::pair<std::vector<node_ptr>, std::vector<entry_ptr>> {
             ii+=1;
         }
 
-        std::cout << "pos - hijo - promotor :" << pos_promote[i] << std::endl;
+        std::cout << "pos - hijo - promotor :" << pos << std::endl;
+        ptr_covert_trees[i]->print_node();
         auto oi = make_inter(*ptr_covert_trees[i]->get_entry(pos), ptr_covert_trees[i] , new_cover_radius);
         ptr_entrys.push_back(oi);
     }
