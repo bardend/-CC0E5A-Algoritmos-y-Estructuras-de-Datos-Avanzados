@@ -33,16 +33,19 @@ Cabe resaltar que, en el *paper*, las **entradas internas deben actualizarse cad
 La métrica utilizada consiste en **hallar los puntos más lejanos** entre todos los candidatos, con el fin de maximizar la separación.
 
 Una vez realizada dicha elección, para asegurarnos de que el **radio del nodo padre** cubre completamente su subárbol, se debe aplicar la siguiente expresión:
+
+
 $$
 r(Op_1) = \max\{ d(O_j, Op_1) \mid O_j \in N_1 \}
 $$
+
+
 Por cada *split*, este radio puede actualizarse recursivamente hacia los niveles superiores, garantizando que **todos los nodos internos incluyan completamente a su subárbol** dentro del *cover tree*:
+
+
 $$
 r(Op_1) = \max\{ d(O_j, Op_1) + r(O_j) \mid O_j \in N_1 \}
 $$
-
-------
-
 
 
 Una gráfica para tener una noción :
