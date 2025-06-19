@@ -50,7 +50,7 @@ $$
 
 Una gráfica para tener una noción :
 
-![](/home/bardend/m_tree.png)
+![](/home/bardend/Documents/Cursos/8/AlgortimosAvanzado/Algorithms/Project3/img/m_tree.png)
 
 ### Geometría de la Decisión
 
