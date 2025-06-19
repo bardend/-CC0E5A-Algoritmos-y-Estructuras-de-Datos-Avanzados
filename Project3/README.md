@@ -52,6 +52,19 @@ Una gráfica para tener una noción :
 
 ![](/home/bardend/m_tree.png)
 
+### Geometría de la Decisión
+
+**Caso 1: Nodos Internos (primera rama)**
+
+```
+if dmin(T(Or)) ≤ dk
+```
+
+Pregunta: "¿La región más cercana de esta caja puede contener mejores candidatos?"
+
+- Si `dmin > dk`: **Poda total** - toda la región es irrelevante
+- Si `dmax < dk`: **Inclusión total** - todos los objetos en la región son mejores que los actuales
+
 
 
 ### 🏗️ **Sección 3: Poda en el Árbol**
