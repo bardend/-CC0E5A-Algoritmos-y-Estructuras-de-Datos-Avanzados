@@ -28,7 +28,7 @@ Desde el punto de vista del rendimiento, si tenemos datos con un número alto de
   - Entradas hoja: `entry(Oj) = [Oj, oid(Oj), d(Oj, P(Oj))]`
   - Entradas internas: `entry(Or) = [Or, ptr(T(Or)), r(Or), d(Or, P(Or))]`
 
-Cabe resaltar que, en el *paper*, las **entradas internas deben actualizarse cada vez que se realiza una operación de split cuando un nodo está saturado (`overflow`).** En este proceso, se promueven dos nodos mediante diversas heurísticas que buscan **evitar el solapamiento** (*overlap*) entre las entradas internas.
+Cabe resaltar que, en el *paper*, las **entradas internas deben actualizarse cada vez que se realiza una operación de split cuando un nodo está saturado (`overflow`).** En este proceso, se promueven dos nodos mediante diversas heurísticas que buscan **evitar el solapamiento** (*overlap*) entre las entradas internas.	
 
 La métrica utilizada consiste en **hallar los puntos más lejanos** entre todos los candidatos, con el fin de maximizar la separación.
 
