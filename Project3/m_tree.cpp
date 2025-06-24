@@ -1,5 +1,10 @@
 //m_tree.cpp
 #include <iostream>
+#include <random>
+#include <fstream>
+#include <sstream>
+
+
 #include "m_tree.hpp"
 
 
@@ -12,78 +17,77 @@ std::shared_ptr<tree_t> make_tree(args_t&&... args) {
 }
 
 int main() {
-    ////////////////////////////////////////End_point//////////////////////////
-   
-    // std::vector<double> features1 = {1.0, 2.0};
-    // std::vector<double> features2 = {0.0, 0.0};
-    // std::string xd = "xd";
-    // entry_type e1 = make_entry(features1, "1");
-    // entry_type e2 = make_entry(features2, "2"); 
-    // entry_type e3 = make_entry(features1, "3");
-    // entry_type e4 = make_entry(features1, "4");
-    // std::cout << e2->oid << std::endl;
-    // ////////////////////////////////////////////////////////////////////////////
-    // // std::cout << e1->distance_to(*e2, manhattan_space) << std::endl;
-    // // std::cout << entry_inter->distance_to(*e1, manhattan_space) << std::endl;
-    // // std::cout << entry_leaf->distance_to(*e1, manhattan_space) << std::endl;
-    //
-    // // Crear nodos usando shared_ptr desde el inicio
-    // auto leaf_node = make_node(true);
-    // leaf_node->print_node();
-    // leaf_node->insert_entry(e1);
-    // leaf_node->print_node();
-    // leaf_node->insert_entry(e2);
-    // leaf_node->print_node();
-    // leaf_node->insert_entry(e3);
-    // leaf_node->print_node();
-    //
-    // std::cout << "-ANOTHER" << std::endl;
-    // auto other = make_node(true);
-    // leaf_node->move_entry(2, other, 3);
-    // other->insert_entry(e4);
-    // other->print_node();
-    // other->swap_entry(0, leaf_node, 1);
-    // other->print_node();
-    // other->remove_entry(0);
-    // other->print_node();
-    
-    std::vector<double> features1 = {1.0, 1.0};
-    std::vector<double> features2 = {2.0, 2.0};
-    std::vector<double> features3 = {4, 6};
-    std::vector<double> features4 = {4, 7};
-    std::vector<double> features5 = {1, 8};
-    std::vector<double> features6 = {2, 6.0};
-    std::vector<double> features7 = {1, 0};
-    std::vector<double> features8 = {0, 2};
-    std::vector<double> features9 = {3, 2.0};
-    
-    entry_type e1 = make_entry(features1, "A");
-    entry_type e2 = make_entry(features2, "B");
-    entry_type e3 = make_entry(features3,"C");
-    entry_type e4 = make_entry(features4, "D");
-    entry_type e5 = make_entry(features5, "E");
-    entry_type e6 = make_entry(features6, "F");
-    entry_type e7 = make_entry(features7, "G");
-    entry_type e8 = make_entry(features8, "H");
-    entry_type e9 = make_entry(features9, "I");
-    //
     auto tree = make_tree();
-    tree->insert(e1);
-    tree->insert(e2);
-    tree->insert(e3);
-    tree->insert(e4);
-    tree->insert(e5);
-    tree->insert(e6);
-    tree->print_tree();
+std::ifstream infile("in.txt");
+std::vector<std::pair<std::string, std::vector<double>>> data;
 
-    tree->insert(e7);
-    tree->print_tree();
+// Verificar si el archivo existe y no está vacío
+if (infile.is_open() && infile.peek() != std::ifstream::traits_type::eof()) {
+    // Leer datos del archivo
+    std::cout << "Leyendo datos desde in.txt..." << std::endl;
     
-    tree->insert(e8);
-    tree->print_tree();
-   
-    tree->insert(e9);
-    tree->print_tree();
+    int count;
+    infile >> count;
+    
+    for (int i = 0; i < count; i++) {
+        std::string word;
+        double feature1, feature2;
+        infile >> word >> feature1 >> feature2;
+        
+        std::vector<double> features = {feature1, feature2};
+        data.push_back({word, features});
+    }
+    infile.close();
+} else {
+    // Generar datos aleatorios y guardarlos
+    std::cout << "Archivo in.txt vacío o no existe. Generando datos aleatorios..." << std::endl;
+    
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<> dis(0.0, 10.0);
+    
+    auto random_letter = [&]() {
+        std::uniform_int_distribution<> letter_dis('A', 'Z');
+        return static_cast<char>(letter_dis(gen));
+    };
+    
+    // Generar 10 entradas aleatorias
+    int num_entries = 100;
+    for (int i = 0; i < num_entries; i++) {
+        std::string word = "";
+        for (int j = 0; j < 2; j++) {
+            word += random_letter();
+        }
+        std::vector<double> features = {dis(gen), dis(gen)};
+        data.push_back({word, features});
+    }
+    
+    // Guardar en archivo
+    std::ofstream outfile("in.txt");
+    outfile << num_entries << std::endl;
+    for (const auto& entry : data) {
+        outfile << entry.first << " " << entry.second[0] << " " << entry.second[1] << std::endl;
+    }
+    outfile.close();
+    std::cout << "Datos guardados en in.txt" << std::endl;
+}
 
-    return 0;
+// Procesar los datos (ya sean leídos o generados) y testear el árbol
+std::cout << "\n=== TESTEANDO EL ÁRBOL ===" << std::endl;
+for (const auto& entry : data) {
+    std::cout << "\nVamos a añadir: " << entry.first 
+              << " con features: [" << entry.second[0] 
+              << ", " << entry.second[1] << "]" << std::endl;
+    
+    // Crear entry e insertar en el árbol
+    entry_type e12 = make_entry(entry.second, entry.first);
+    tree->insert(e12);
+    
+    std::cout << "Estado del árbol después de insertar " << entry.first << ":" << std::endl;
+//    tree->bottom_up();
+    std::cout << "---------------------------------------------------------------------------" << std::endl;
+}
+
+std::cout << "\n=== ÁRBOL FINAL ===" << std::endl;
+tree->print_tree();
 }

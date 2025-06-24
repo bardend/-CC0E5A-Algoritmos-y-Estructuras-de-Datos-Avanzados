@@ -30,29 +30,49 @@ class entry {
 public:
     using feature_type = typename Params::feature_type;
     using identifier_type = typename Params::identifier_type;
-    using distance_type = typename Params::feature_type; // Retorna lo mismo que los features :)
+    using distance_type = typename Params::feature_type;
     using metric_space_t = metric_space<Params>; 
     using node_ptr = std::shared_ptr<node<Params>>;
+
     identifier_type oid;
-    int pos;
-protected:
     std::vector<feature_type> features_;
     distance_type dis;
-public:
+    int pos;
+
+    // Campos para internal_entry
+    node_ptr cover_tree = nullptr;
+    distance_type radio_covertura = 0.0;
+    
+    // Constructor para entry básico
     entry(const std::vector<feature_type>& f, const identifier_type& o) 
-        : features_(f), oid(o), dis(0) {}
-    void set_pos(int new_pos) {pos = new_pos;}
-    int get_pos(){ return pos;}
+        : features_(f), oid(o), dis(0), pos(0) {}
+
+    entry(entry base_entry, node_ptr new_cover, distance_type new_r)
+        : features_(base_entry.features_), oid(base_entry.oid), dis(base_entry.dis), 
+          pos(base_entry.pos), cover_tree(new_cover), radio_covertura(new_r) {}
+
+    
+    void set_pos(int new_pos) { pos = new_pos; }
+    int get_pos() { return pos; }
     virtual ~entry() = default;
+    
     void set_identifier(const identifier_type& new_o) noexcept { oid = new_o; }
+    
     distance_type distance_to(const entry& other, const metric_space_t& metric = metric_space_t()) const {
         return metric(features_, other.features_);
     }
 
-    virtual void simple() const { std::cout << "[entry] no-op simple()\n";}
-    virtual node_ptr get_cover_tree() { return nullptr;}
-    virtual void set_cover_tree(node_ptr new_cover) {}
-    virtual distance_type get_cover_radius() { return 0.0;}
+    // Métodos para manejar cover_tree y radio_covertura
+    node_ptr get_cover_tree() { return cover_tree; }
+    void set_cover_tree(node_ptr new_cover) { cover_tree = new_cover; }
+    distance_type get_cover_radius() { return radio_covertura; }
+    void set_cover_radius(distance_type radius) { radio_covertura = radius; }
+    
+    // Método para verificar si es internal entry
+    bool is_internal() const { return cover_tree != nullptr; }
+    
+    // Método para verificar si es leaf entry
+    bool is_leaf() const { return cover_tree == nullptr; }
 };
 
 template <typename Params>
@@ -84,30 +104,6 @@ public:
     distance_type operator()(const feature_vector& a, const feature_vector& b) const {
         return metric(a, b);
     }
-};
-
-template <typename Params>
-class internal_entry : public entry<Params> {
-public: 
-    using node_ptr = std::shared_ptr<node<Params>>;
-    using distance_type = typename entry<Params>::distance_type;
-    node_ptr cover_tree=nullptr;  // Ahora es público para acceso directo
-private:
-    distance_type radio_covertura;
-public: 
-    internal_entry(const entry<Params> base_entry, node_ptr new_cover, distance_type new_r)
-        : entry<Params>(base_entry), cover_tree(new_cover), radio_covertura(new_r) {}
-    node_ptr get_cover_tree() override { return cover_tree;}
-    distance_type get_cover_radius() override {return radio_covertura;}
-    void set_cover_tree(node_ptr new_cover) override { cover_tree = new_cover;}
-
-    void simple() const override { std::cout << "????" << std::endl;}
-};
-
-template <typename Params>
-class leaf_entry : public entry<Params> { 
-public:
-    leaf_entry(const entry<Params> base_entry) : entry<Params>(base_entry) {}
 };
 
 #endif // ENTRY_HPP
