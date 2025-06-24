@@ -253,6 +253,7 @@ public:
     node_ptr find_leaf(entry_ptr entry, node_ptr curr_node);
     node_ptr promote(node_ptr node);
     void split(node_ptr& node);
+    void keep_invariant(node_ptr node);
     void print_tree() const noexcept;
     void print_tree(node_ptr node, int depth) const noexcept;
     void print_tree(node_ptr node, std::string msg) const noexcept;
@@ -392,8 +393,31 @@ auto m_tree<Params>::keep_overflow(node_ptr node) ->void{
     while(node->get_father_node() and node->is_overflow())  
         node = promote(node);
 
-    if(not (node->is_overflow())) return;
+    //Bien ahora debemos actuzalizar los radios de covertura de sus padres, mateniendo la invariante
+    if(not (node->is_overflow())) {
+        keep_invariant(node); //Esto esta mal porque voy por todas la entry :(, solo deberia ir por las que acabo de insertar
+        return ;
+    }
     root_ = promote(root_);
+}
+
+//Aqui deberia enviar el entry que se acaba de insertar, pero bueno pendiente
+template <typename Params>
+auto m_tree<Params>::keep_invariant(node_ptr node) -> void {
+    if(node->get_father_entry()) {
+        entry_ptr entry_p = node->get_father_entry();
+
+        distance_type new_cover_radius = entry_p->radio_covertura;
+
+        for(int i = 0; i < capacity; i++) {
+        if(node->get_entry(i)) {
+        new_cover_radius = std::max(new_cover_radius, 
+            entry_p->distance_to(*node->get_entry(i)) + node->get_entry(i)->radio_covertura);
+        }
+        }
+        entry_p->set_cover_radius(new_cover_radius);
+        keep_invariant(node->get_father_node());
+    }
 }
 
 template <typename Params>
@@ -446,12 +470,13 @@ auto m_tree<Params>::split(node_ptr& node) -> void {
     }
 
     auto gen_entry_promoter = [&](int id, std::vector<int>followers) {
-        distance_type new_cover_radius = 0.0; 
+        distance_type new_cover_radius = node->get_entry(id)->radio_covertura;
         for(auto e : followers) {
             if(e == id) continue;
             new_cover_radius = std::max(new_cover_radius, 
-                    node->get_entry(id)->distance_to(*node->get_entry(e)));
+            node->get_entry(id)->distance_to(*node->get_entry(e)) + node->get_entry(e)->radio_covertura);
         }
+
         entry_ptr new_promoter;
         return new_promoter = make_inter(*node->get_entry(id), nullptr, new_cover_radius); //Recordamos que mas adelante seteas el nuevo cover_tree.
     };
@@ -474,15 +499,10 @@ void m_tree<Params>::print_tree(node_ptr node, int depth) const noexcept {
     for (int i = 0; i < Params::cap_node + 1; ++i) {
         auto entry = node->get_entry(i);
         if (entry) {
-            std::cout << entry->oid << " ";
+            std::cout << entry->oid << "-" << entry->radio_covertura << "    ";
         }
     }
     std::cout << "]\n";
-
-    // if(node->get_father_node()){ 
-    //     std::cout << "Y yo vengo del padre : ---------------------"  << std::endl;
-    //     node->get_father_node()->print_node();
-    // }
 
     if (!node->is_leaf()) {
         for (int i = 0; i < Params::cap_node + 1; ++i) {

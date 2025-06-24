@@ -52,7 +52,7 @@ if (infile.is_open() && infile.peek() != std::ifstream::traits_type::eof()) {
     };
     
     // Generar 10 entradas aleatorias
-    int num_entries = 100;
+    int num_entries = 20;
     for (int i = 0; i < num_entries; i++) {
         std::string word = "";
         for (int j = 0; j < 2; j++) {
@@ -82,12 +82,9 @@ for (const auto& entry : data) {
     // Crear entry e insertar en el árbol
     entry_type e12 = make_entry(entry.second, entry.first);
     tree->insert(e12);
-    
-    std::cout << "Estado del árbol después de insertar " << entry.first << ":" << std::endl;
-//    tree->bottom_up();
-    std::cout << "---------------------------------------------------------------------------" << std::endl;
+    tree->print_tree();
 }
 
-std::cout << "\n=== ÁRBOL FINAL ===" << std::endl;
-tree->print_tree();
+// std::cout << "\n=== ÁRBOL FINAL ===" << std::endl;
+// tree->print_tree();
 }
