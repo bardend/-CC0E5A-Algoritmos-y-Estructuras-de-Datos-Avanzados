@@ -14,7 +14,6 @@
 #include <set>
 
 #include "../src/m_tree.h"
-#include "../src/utils.h"
 
 class Timer {
 private:

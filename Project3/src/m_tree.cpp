@@ -143,6 +143,14 @@ std::pair<int, int> node<Params>::pick_promoters(const heuristic_split_f& heuris
 
 template<typename Params>
 void node<Params>::make_partition_afetr_split(int pos_parent, std::vector<int>partition) {
+    /* Input : 
+     *      -pos_parent : Posicion actual en el padre del entry promotor.
+     *      -partition : Id's de los entries que seguiran al entry que fue promovida.
+     *
+     * 1. Generamos la nueva particion
+     * 2. Insertamos las nuevas realciones entre la nueva particion(new_sibling) y el promotor
+     */
+
     auto new_sibling = std::make_shared<node<Params>>(is_leaf());
 
     //Asignamos como padre a new_sibling a los cover_tree de node
@@ -163,7 +171,6 @@ void node<Params>::make_partition_afetr_split(int pos_parent, std::vector<int>pa
 // Implementaciones de las funciones de la clase m_tree
 template <typename Params>
 typename m_tree<Params>::node_ptr m_tree<Params>::find_leaf(entry_ptr new_entry, node_ptr curr_node) {
-    std::cout << "Capacity: " <<  capacity  << std::endl;
     if (curr_node->is_leaf()) 
         return curr_node;
 
@@ -203,6 +210,12 @@ typename m_tree<Params>::node_ptr m_tree<Params>::find_leaf(entry_ptr new_entry,
 
 template <typename Params>
 void m_tree<Params>::keep_overflow(node_ptr node, std::vector<int>&positions_promote) {
+    /*
+     * Inputs:
+     *      node : nodo actual al cual verificar que cumpla la invariante
+     * Se hace un recorrido bottom-up verificando la invariante,
+     */
+    
     while(node->get_father_node() and node->is_overflow())  
         node = promote(node, positions_promote);
 
@@ -215,6 +228,12 @@ void m_tree<Params>::keep_overflow(node_ptr node, std::vector<int>&positions_pro
 
 template <typename Params>
 void m_tree<Params>::keep_invariant(node_ptr node, std::vector<int>&positions) {
+    /*
+     * Inputs:
+     *      -node el nodo actual camino al root
+     *      -positions vector de las posiciones de las entries que fueron actualizadas y debemos propagar hacia su padre node
+     */
+
     if(node->get_father_entry()) {
         entry_ptr entry_p = node->get_father_entry();
         distance_type new_cover_radius = entry_p->radio_covertura;
@@ -232,6 +251,14 @@ void m_tree<Params>::keep_invariant(node_ptr node, std::vector<int>&positions) {
 
 template <typename Params>
 typename m_tree<Params>::node_ptr m_tree<Params>::promote(node_ptr node, std::vector<int>&positions_promote) {
+
+    /*
+     * Inputs:
+     *      - node : nodo actual el cual se piensa promover algunas(2) entries
+     * Verificamos si estamos en el root necesitamos crear un nuevo ``new_root``
+     * Caso contrario eliminamos al entry_padre que estamos enlazados y promovemos nuevas entry(split)
+     */
+
     positions_promote.clear();
     node_ptr ancestor_node;
     if(node == root_) ancestor_node = make_node(false) ;
@@ -248,6 +275,17 @@ typename m_tree<Params>::node_ptr m_tree<Params>::promote(node_ptr node, std::ve
 
 template <typename Params>
 void m_tree<Params>::split(node_ptr& node, std::vector<int>&positions_promote) {
+
+    /* 
+     * Inputs :
+     *      - node : nodo actual al cual pienso particinar.
+     * 
+     * 1. picks son los indices de los nodos promovidos dentro del nodo.
+     * 2. partition[x] son el conjunto de indices que seguiran el x-simo pick
+     * Con esto (1, 2) generar el nuevo entry acorde a diversas heuristicas, insertar en el padre,
+     * relacionarse (get_father, get_entry, get_covert_tree).
+     */
+
     assert(node->size_entry() == capacity+1);
     std::vector<int>picks(num_entries_promoters);
     auto [pick1, pick2] = node->pick_promoters();
