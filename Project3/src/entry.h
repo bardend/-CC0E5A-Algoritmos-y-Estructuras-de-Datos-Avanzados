@@ -4,7 +4,7 @@
 #include <vector>
 #include <functional>
 #include <cmath>
-
+#include <string>  
 template <typename T>
 inline void m_tree_swap_helper(T& a, T& b) {
 	using std::swap;

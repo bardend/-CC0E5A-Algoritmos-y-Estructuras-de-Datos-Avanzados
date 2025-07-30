@@ -1,7 +1,7 @@
 #ifndef UTILS_HPP
 #define UTILS_HPP
 #include <memory>
-#include "entry.hpp"
+#include "entry.h"
 
 using params = MTreeParams<double, std::string, 10>;
 using entry_t = entry<params>;
@@ -9,10 +9,10 @@ using node_t = node<params>;
 using entry_type = std::shared_ptr<entry<params>>;
 using space = metric_space<params>;
 
-auto manhattan = space::manhattan;
-auto euclidean = space::euclidean;
-space manhattan_space(manhattan);
-space euclidean_space(euclidean);
+inline auto manhattan = space::manhattan;
+inline auto euclidean = space::euclidean;
+inline space manhattan_space(manhattan);
+inline space euclidean_space(euclidean);
 
 // Función para crear un entry básico (leaf entry)
 template <typename... args_t>
