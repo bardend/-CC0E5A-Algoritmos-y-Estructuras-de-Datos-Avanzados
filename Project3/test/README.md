@@ -5,7 +5,7 @@ Test de rendimiento para implementación de M-Tree en C++.
 ## Compilar
 
 ```bash
-g++ -o mtree_test main.cpp ../src/entry.cpp ../src/m_tree.cpp
+g++ -o mtree_test main.cpp ../src/m_tree.cpp
 ```
 
 ## Ejecutar
