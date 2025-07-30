@@ -15,7 +15,7 @@ template <typename Params> class node;
 template <typename Params> class metric_space;
 template <typename Params> class entry;
 
-template <typename features = double, typename identifier = std::string, int capacity = 3>
+template <typename features = double, typename identifier = std::string, int capacity = 10>
 struct MTreeParams {
     using feature_type = features;
     using identifier_type = identifier;
@@ -37,7 +37,7 @@ public:
     identifier_type oid;
     std::vector<feature_type> features_;
     distance_type dis;
-    int pos;
+    int pos = 0;
 
     // Campos para internal_entry
     node_ptr cover_tree = nullptr;
@@ -58,9 +58,6 @@ public:
     
     void set_identifier(const identifier_type& new_o) noexcept { oid = new_o; }
     
-    distance_type distance_to(const entry& other, const metric_space_t& metric = metric_space_t()) const {
-        return metric(features_, other.features_);
-    }
 
     // Métodos para manejar cover_tree y radio_covertura
     node_ptr get_cover_tree() { return cover_tree; }
@@ -73,6 +70,11 @@ public:
     
     // Método para verificar si es leaf entry
     bool is_leaf() const { return cover_tree == nullptr; }
+
+    distance_type distance_to(const entry& other, const metric_space_t& metric = metric_space_t()) const {
+        return metric(features_, other.features_);
+    }
+
 };
 
 template <typename Params>

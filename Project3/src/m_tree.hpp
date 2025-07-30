@@ -10,11 +10,12 @@
 #include <algorithm>
 #include <queue>
 #include <iostream>
-
+#include <random>
 #include "entry.hpp"
 #include "utils.hpp"
 
 template <typename Params> class entry;
+template <typename Params> class heuristic_split;
 
 template <typename Params>
 class node : public std::enable_shared_from_this<node<Params>> {
@@ -24,6 +25,7 @@ public:
     static constexpr int capacity =  Params::cap_node;
   	typedef Params params_type;
     using distance_type = typename Params::feature_type;
+    using heuristic_split_f = heuristic_split<Params>;
 
 private:
     struct base_fields {
@@ -131,6 +133,10 @@ public:
         current_pos_entry_ = std::min(current_pos_entry_, i);
         size_entry_--;
     }
+    std::pair<int, int> pick_promoters(const heuristic_split_f& heuristic = heuristic_split_f()) {
+
+        return heuristic(this);
+    }
 
     void print_node() const {
         std::cout << "======================================================" << std::endl;
@@ -157,10 +163,12 @@ void node<Params>::print_tree(node_ptr node, int depth) const noexcept {
     std::string indent(depth * 8, ' ');
     std::cout << indent << "[";
 
+
     for (int i = 0; i < Params::cap_node + 1; ++i) {
         auto entry = node->get_entry(i);
         if (entry) {
-            std::cout << entry->oid << " ";
+            std::cout << entry->oid << " " << node->is_leaf()<< "    ";
+
         }
     }
     std::cout << "]\n";
@@ -215,6 +223,67 @@ auto node<Params>::make_partition_afetr_split(int pos_parent, std::vector<int>pa
     this->get_father_node()->get_entry(pos_parent)->set_cover_tree(new_sibling);
 }
 
+
+template <typename Params>
+class heuristic_split {
+public:
+    using feature_type = typename Params::feature_type;
+    using distance_type = typename Params::feature_type;
+    using feature_vector = std::vector<feature_type>;
+    using node_ptr = std::shared_ptr<node<Params>>;
+    using entry_ptr = std::shared_ptr<entry<Params>>;
+    static constexpr int capacity =  Params::cap_node;
+
+    //using heuristic_function = std::function<std::pair<int,int>(const node_ptr& node)>;
+    using heuristic_function = std::function<std::pair<int,int>(node<Params>* node)>;
+
+private:
+    heuristic_function heuristic;
+
+public:
+    static std::pair<int, int> random_max_dis(node<Params>* node) {
+
+        std::random_device rd;
+        std::mt19937 gen(rd()); // Mersenne Twister RNG
+        std::uniform_int_distribution<> dis(0, capacity);
+        int ini = dis(gen);
+        int pick;
+        distance_type min_dis = std::numeric_limits<distance_type>::infinity();
+        for(int j = 0; j <= capacity; j++) {
+            if(j == ini)continue;
+            distance_type cur_dis = node->get_entry(j)->distance_to(*(node->get_entry(ini)));
+            if(cur_dis< min_dis) {
+                min_dis = cur_dis;
+                pick = j;
+            }
+        }
+        return {ini, pick};
+    }
+
+    static std::pair<int, int> pair_max_dis( node<Params>* node) {
+        distance_type min_dis = std::numeric_limits<distance_type>::infinity();
+        int pick1, pick2;
+        for(int i = 0; i <= capacity; i++) {
+            for(int j = i+1; j <= capacity; j++) {
+                distance_type cur_dis = node->get_entry(i)->distance_to(*(node->get_entry(j)));
+                if (cur_dis < min_dis) {
+                    min_dis = cur_dis;
+                    pick1 = i;
+                    pick2 = j;
+                }
+            }
+        }
+        return {pick1, pick2};
+    }
+    heuristic_split(heuristic_function func = pair_max_dis) : heuristic(func){}
+    std::pair<int, int> operator()( node<Params>* node) const {
+        return heuristic(node);
+    }
+};
+
+
+
+
 template <typename Params>
 class m_tree {
 public:
@@ -222,11 +291,13 @@ public:
     using entry_ptr = std::shared_ptr<entry<Params>>;
     static constexpr int capacity =  Params::cap_node;
     using distance_type = typename Params::feature_type;
+    using identifier_type = typename Params::identifier_type;
 
 private:
     node_ptr root_;
     int size_nodes_;
     int size_entries_;
+    int num_entries_promoters = 2;
 
 public:
      explicit m_tree(): size_nodes_{0}, size_entries_{0}{}
@@ -235,9 +306,9 @@ public:
     int size_nodes() const noexcept { return size_nodes_; }
     void clear() noexcept { root_.reset(); size_nodes_ = 0; size_entries_ =0; }
     node_ptr get_root() const { return root_; }
-    void keep_overflow(node_ptr node);
+    void keep_overflow(node_ptr node, std::vector<int>&v);
 
-    void insert(entry_ptr new_entry) {  
+    void insert(entry_ptr new_entry) {
         if(!root_) {
             root_ = std::make_shared<node<Params>>(true);
             root_->insert_entry(new_entry);
@@ -245,19 +316,21 @@ public:
             return;
         }
         auto current_leaf = find_leaf(new_entry, root_);
-        current_leaf->insert_entry(new_entry);
+        std::vector<int>positions;
+        positions.push_back(current_leaf->insert_entry(new_entry));
         size_entries_ += 1;
-        keep_overflow(current_leaf);
+        keep_overflow(current_leaf, positions);
     }
 
     node_ptr find_leaf(entry_ptr entry, node_ptr curr_node);
-    node_ptr promote(node_ptr node);
-    void split(node_ptr& node);
-    void keep_invariant(node_ptr node);
+    node_ptr promote(node_ptr node, std::vector<int>&v);
+    void split(node_ptr& node, std::vector<int>&v);
+    void keep_invariant(node_ptr node, std::vector<int>&v);
     void print_tree() const noexcept;
     void print_tree(node_ptr node, int depth) const noexcept;
     void print_tree(node_ptr node, std::string msg) const noexcept;
 
+    std::vector<identifier_type> k_nn_entries(entry_ptr query, int k);
     //////////////////////////////////////////////////////////////////////////////
     public:
     void bottom_up() const noexcept;
@@ -265,6 +338,85 @@ public:
     void print_path_to_root(node_ptr leaf) const noexcept;
 
 };
+
+
+template <typename Params>
+std::vector<typename Params::identifier_type> m_tree<Params>::k_nn_entries(entry_ptr query, int k) {
+    /* 
+     * Input :
+     *      query : Query a buscar
+     *      k : numero de vecinos cercanos(entry leaf)
+     *
+     * 1.Creamos 2 priority_queue una para todos los nodos internos y otra para las hojas
+     *      1.1 Para los nodos internos guarda los k mejores vecinos de la siguiente forma :
+     *          1.1 Si la longitud es menor que k inserto si o si :)
+     *          1.2 Guardo distancia donde el pico es a mayor distancia.
+     *              1.2.1 Que pasa si obtengo una distancia menor a la mayor distancia(pico), pues elimino el pico con pop() y agrego la nueva distancia
+     *                    recordemos que el priority_queue se encarga de reordenar por dentro
+     *              1.2.2 Que pasa si la nueva distancia es mayor que el pico, no pasa nada 
+     *          1.3 Con ello mantenemos la invariante
+     *       1.2 Cuando llega a la hoja lo inserto en otra priority_queue con negativo para tener las menores distancias en el pico.
+     */
+
+    auto d = [&](entry_ptr entry, entry_ptr query) -> std::pair<distance_type, distance_type> {
+        std::pair<distance_type, distance_type> ret; 
+        return ret = { std::max(0.0, (entry->distance_to(*query)- (entry->get_cover_radius()))),
+                       entry->distance_to(*query) + entry->get_cover_radius() };
+                
+    };
+
+    auto validate_candidate =[&](std::priority_queue<std::pair<distance_type, entry_ptr>>&candidates, entry_ptr entry) -> void {
+
+        auto [mini, maxi] = d(entry, query);
+        if((int)candidates.size() < k) {
+            candidates.push({-mini, entry});
+        }
+        else {
+            // distance_type max_dis = candidates.top().first;
+            // if(maxi < max_dis) 
+            //     candidates.pop();
+            candidates.push({-mini, entry});
+        }
+    };
+
+    std::priority_queue<std::pair<distance_type, entry_ptr>>candidates;
+    std::priority_queue<std::pair<distance_type, entry_ptr>>best;
+
+    node_ptr node = root_;
+    for(int i = 0; i < capacity; i++) {
+        auto e = node->get_entry(i);
+        if(!e) continue;
+        validate_candidate(candidates, e);
+    }
+    while(!candidates.empty()) {
+        auto [dis, entry] = candidates.top();
+        candidates.pop();
+
+        if(entry->is_leaf()) {
+            best.push({-(entry->distance_to(*query)), entry});
+            if((int)best.size() == k) break;
+        }
+
+        else {
+            node_ptr node = entry->get_cover_tree();
+            for(int i = 0; i < capacity; i++) {
+                auto e = node->get_entry(i);
+                if(!e) continue;
+                validate_candidate(candidates, e);
+            }
+        }
+    }
+
+    std::vector<identifier_type> ret(k);
+    for(int i = 0; i < k; i++) {
+        // std::cout << "Los k mejores :)" << std::endl;
+        // std::cout << best.top().first << " " << best.top().second->oid << std::endl;
+        ret[i] = best.top().second->oid;
+        best.pop();
+    }
+    return ret;
+}
+
 
 // Implementaciones de los métodos
 template <typename Params>
@@ -343,7 +495,6 @@ void m_tree<Params>::print_path_to_root(node_ptr leaf) const noexcept {
 }
 /////////////////////////////////////////////////////
 
-
 template <typename Params>
 auto m_tree<Params>::find_leaf(entry_ptr new_entry, node_ptr curr_node) -> node_ptr {
     if (curr_node->is_leaf()) 
@@ -384,44 +535,49 @@ auto m_tree<Params>::find_leaf(entry_ptr new_entry, node_ptr curr_node) -> node_
 }
 
 template <typename Params>
-auto m_tree<Params>::keep_overflow(node_ptr node) ->void{ 
+auto m_tree<Params>::keep_overflow(node_ptr node, std::vector<int>&positions_promote) ->void{ 
     /*
      * Inputs:
      *      node : nodo actual al cual verificar que cumpla la invariante
      * Se hace un recorrido bottom-up verificando la invariante,
      */
     while(node->get_father_node() and node->is_overflow())  
-        node = promote(node);
+        node = promote(node, positions_promote);
 
     //Bien ahora debemos actuzalizar los radios de covertura de sus padres, mateniendo la invariante
-    if(not (node->is_overflow())) {
-        keep_invariant(node); //Esto esta mal porque voy por todas la entry :(, solo deberia ir por las que acabo de insertar
+    if(not(node->is_overflow())) {
+        keep_invariant(node, positions_promote); // positions_promote solo tiene las posiciones modificadas de las entries en dicho nodo.
         return ;
     }
-    root_ = promote(root_);
+    root_ = promote(root_, positions_promote);
 }
 
 //Aqui deberia enviar el entry que se acaba de insertar, pero bueno pendiente
 template <typename Params>
-auto m_tree<Params>::keep_invariant(node_ptr node) -> void {
+auto m_tree<Params>::keep_invariant(node_ptr node, std::vector<int>&positions) -> void {
+    /*
+     * Inputs:
+     *      -node el nodo actual camino al root
+     *      -positions vector de las posiciones de las entries que fueron actualizadas y debemos propagar hacia su padre node
+     */
+
     if(node->get_father_entry()) {
         entry_ptr entry_p = node->get_father_entry();
-
         distance_type new_cover_radius = entry_p->radio_covertura;
-
-        for(int i = 0; i < capacity; i++) {
-        if(node->get_entry(i)) {
-        new_cover_radius = std::max(new_cover_radius, 
-            entry_p->distance_to(*node->get_entry(i)) + node->get_entry(i)->radio_covertura);
-        }
-        }
+        for(auto pos : positions)
+            if(node->get_entry(pos)) {
+            new_cover_radius = std::max(new_cover_radius, 
+                entry_p->distance_to(*node->get_entry(pos)) + node->get_entry(pos)->radio_covertura);
+            }
         entry_p->set_cover_radius(new_cover_radius);
-        keep_invariant(node->get_father_node());
+        std::vector<int>continue_path_positions(1);
+        continue_path_positions[0] = node->get_father_entry()->get_pos();
+        keep_invariant(node->get_father_node(), continue_path_positions);
     }
 }
 
 template <typename Params>
-auto m_tree<Params>::promote(node_ptr node) -> node_ptr {
+auto m_tree<Params>::promote(node_ptr node, std::vector<int>&positions_promote) -> node_ptr {
     /*
      * Inputs:
      *      - node : nodo actual el cual se piensa promover algunas(2) entries
@@ -429,6 +585,7 @@ auto m_tree<Params>::promote(node_ptr node) -> node_ptr {
      * Caso contrario eliminamos al entry_padre que estamos enlazados y promovemos nuevas entry(split)
      */
 
+    positions_promote.clear();
     node_ptr ancestor_node;
     if(node == root_) ancestor_node = make_node(false) ;
     else  ancestor_node = node->get_father_node();
@@ -436,14 +593,14 @@ auto m_tree<Params>::promote(node_ptr node) -> node_ptr {
     if(node != root_)  ancestor_node->remove_entry(node->get_father_entry()->get_pos());
     node->set_father_node(ancestor_node);
 
-    split(node);
-    size_nodes_ += 2;
+    split(node, positions_promote);
+    size_nodes_ += num_entries_promoters;
     node.reset();
     return ancestor_node;
 }
 
 template <typename Params>
-auto m_tree<Params>::split(node_ptr& node) -> void {
+auto m_tree<Params>::split(node_ptr& node, std::vector<int>&positions_promote) -> void {
     /* 
      * Inputs :
      *      - node : nodo actual al cual pienso particinar.
@@ -456,11 +613,17 @@ auto m_tree<Params>::split(node_ptr& node) -> void {
     assert(node->size_entry() == node->capacity+1);
 
     // Por ahora solo se trabajan con 2 promotores
-    const int num_promots = 2;
-    std::vector<int>picks(num_promots);
-    picks[0] = 0, picks[1] = node->size_entry()-1; //se debe cambiar por la heuristica
+    std::vector<int>picks(num_entries_promoters);
+    auto [pick1, pick2] = node->pick_promoters();
 
-    std::vector<std::vector<int>>partition(num_promots);
+    //std::cout << "capacity: " << capacity << std::endl;
+    picks[0] = pick1; picks[1] = pick2;
+    //std::cout << "pick1: " << pick1 << " pick2: " << pick2 << std::endl;
+    //picks[0] = 0, picks[1] = node->size_entry()-1; //se debe cambiar por la heuristica
+
+    //std::cout << "pick1: " << pick1 << " pick2: " << pick2 << std::endl;
+
+    std::vector<std::vector<int>>partition(num_entries_promoters);
 
     for(int i = 0; i < node->size_entry(); i++) {
         int id_partition = (node->get_entry(picks[0])->distance_to(*node->get_entry(i))  <
@@ -476,16 +639,16 @@ auto m_tree<Params>::split(node_ptr& node) -> void {
             new_cover_radius = std::max(new_cover_radius, 
             node->get_entry(id)->distance_to(*node->get_entry(e)) + node->get_entry(e)->radio_covertura);
         }
-
         entry_ptr new_promoter;
         return new_promoter = make_inter(*node->get_entry(id), nullptr, new_cover_radius); //Recordamos que mas adelante seteas el nuevo cover_tree.
     };
 
-    
-    for(int i = 0; i < num_promots; i++) {
+    positions_promote.resize(num_entries_promoters);
+    for(int i = 0; i < num_entries_promoters; i++) {
         entry_ptr cur_promoter = gen_entry_promoter(picks[i], partition[i]);
         int pos_promoter_in_father = node->get_father_node()->insert_entry(cur_promoter);
         node->make_partition_afetr_split(pos_promoter_in_father, partition[i]);
+        positions_promote.push_back(pos_promoter_in_father);
     }
 }
 
@@ -499,7 +662,7 @@ void m_tree<Params>::print_tree(node_ptr node, int depth) const noexcept {
     for (int i = 0; i < Params::cap_node + 1; ++i) {
         auto entry = node->get_entry(i);
         if (entry) {
-            std::cout << entry->oid << "-" << entry->radio_covertura << "    ";
+            std::cout << entry->oid << " -> " << entry->radio_covertura <<   "      ";
         }
     }
     std::cout << "]\n";
