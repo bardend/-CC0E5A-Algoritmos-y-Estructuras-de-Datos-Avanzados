@@ -1,19 +1,20 @@
 #include <iostream>
-#include <random>
 #include <vector>
 #include <string>
-#include <set>
 #include <algorithm>
 #include <cmath>
 #include <iomanip>
 #include <chrono>
+#include <fstream>
+#include <sstream>
 #include <ctime>
 #include <thread>
-#include "../src/m_tree.hpp"
+#include <cstring>
+#include <random>
+#include <set>
 
-// ============================================================================
-// 1. USANDO std::chrono (RECOMENDADO - C++11+)
-// ============================================================================
+#include "../src/m_tree.h"
+#include "../src/utils.h"
 
 class Timer {
 private:
@@ -29,43 +30,29 @@ public:
         end_time = std::chrono::high_resolution_clock::now();
     }
     
-    // Tiempo en microsegundos
     long long getMicroseconds() {
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
         return duration.count();
     }
     
-    // Tiempo en milisegundos
     long long getMilliseconds() {
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
         return duration.count();
     }
     
-    // Tiempo en segundos (como double)
     double getSeconds() {
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
         return duration.count() / 1000000.0;
     }
 };
 
-//using tree_t = m_tree<params>;
 using tree_t = m_tree<MTreeParams<double, std::string, 10>>;
 
-
-// Función make_tree trasladada desde utils.hpp
 template <typename... args_t>
 std::shared_ptr<tree_t> make_tree(args_t&&... args) {
     return std::make_shared<tree_t>(std::forward<args_t>(args)...);
 }
 
-/**
- * Genera datos mock con OIDs únicos
- * @param num_entries Número de entradas a generar
- * @param dimension Dimensión de los vectores de features
- * @param min_val Valor mínimo para las features
- * @param max_val Valor máximo para las features
- * @return Vector de pares (oid, features)
- */
 std::vector<std::pair<std::string, std::vector<double>>> generateMockData(
     int num_entries, 
     int dimension, 
@@ -97,6 +84,7 @@ std::vector<std::pair<std::string, std::vector<double>>> generateMockData(
     
     return data;
 }
+
 std::shared_ptr<tree_t> buildTree(const std::vector<std::pair<std::string, std::vector<double>>>& data) {
     auto tree = make_tree();
     for (const auto& entry_data : data) {
@@ -106,14 +94,6 @@ std::shared_ptr<tree_t> buildTree(const std::vector<std::pair<std::string, std::
     return tree;
 }
 
-
-/**
- * Genera un vector de query aleatorio
- * @param dimension Dimensión del vector de features
- * @param min_val Valor mínimo para las features
- * @param max_val Valor máximo para las features
- * @return Vector de features para query
- */
 std::vector<double> generateRandomQuery(
     int dimension, 
     double min_val = 0.0, 
@@ -132,9 +112,6 @@ std::vector<double> generateRandomQuery(
     return query_features;
 }
 
-/**
- * Calcula la distancia euclidiana entre dos vectores
- */
 double euclideanDistance(const std::vector<double>& a, const std::vector<double>& b) {
     if (a.size() != b.size()) {
         throw std::invalid_argument("Vectores de diferentes dimensiones");
@@ -148,14 +125,6 @@ double euclideanDistance(const std::vector<double>& a, const std::vector<double>
     return std::sqrt(sum);
 }
 
-/**
- * Implementación de fuerza bruta para k-NN
- * @param all_data Todos los datos disponibles
- * @param query_features Features del punto de consulta
- * @param k Número de vecinos más cercanos
- * @return Vector de OIDs de los k vecinos más cercanos
- */
-
 std::vector<std::string> bruteForceKNN(
     const std::vector<std::pair<std::string, std::vector<double>>>& all_data,
     const std::vector<double>& query_features,
@@ -163,16 +132,13 @@ std::vector<std::string> bruteForceKNN(
 ) {
     std::vector<std::pair<double, std::string>> distances;
     
-    // Calcular distancias a todos los puntos
     for (const auto& data_point : all_data) {
         double distance = euclideanDistance(query_features, data_point.second);
         distances.push_back({distance, data_point.first});
     }
     
-    // Ordenar por distancia
     std::sort(distances.begin(), distances.end());
     
-    // Tomar los k primeros
     std::vector<std::string> result;
     for (int i = 0; i < std::min(k, static_cast<int>(distances.size())); ++i) {
         result.push_back(distances[i].second);
@@ -181,9 +147,6 @@ std::vector<std::string> bruteForceKNN(
     return result;
 }
 
-/**
- * Valida que los resultados del M-tree coincidan con fuerza bruta
- */
 bool validateKNNResults(
     const std::vector<std::string>& tree_results,
     const std::vector<std::string>& brute_force_results
@@ -207,9 +170,6 @@ bool validateKNNResults(
     return true;
 }
 
-/**
- * Ejecuta un test completo de k-NN
- */
 bool runKNNTest(
     std::shared_ptr<tree_t>& tree,
     const std::vector<std::pair<std::string, std::vector<double>>>& data,
@@ -221,36 +181,74 @@ bool runKNNTest(
     // Ejecutar k-NN en M-tree
     auto tree_results = tree->k_nn_entries(query_entry, k);
     
-    // Ejecutar fuerza bruta
+    // Ejecutar fuerza bruta (comentado para velocidad)
     // auto brute_results = bruteForceKNN(data, query_features, k);
     // return validateKNNResults(tree_results, brute_results);
     return true;
-    
 }
 
-int main() {
-    std::cout << "🧪 TESTING M-TREE" << std::endl;
-    std::cout << "=================" << std::endl;
-
-    int dimension = 1024; //32x32
+struct TestParams {
+    int dimension = 10;
     int num_test = 1;
     int num_queries = 5;
     int num_points = 100000;
     double min_val = 0.0;
     double max_val = 200000.0;
+};
+
+void showHelp(const char* program_name) {
+    std::cout << "Uso: " << program_name << " [opciones]" << std::endl;
+    std::cout << "Opciones:" << std::endl;
+    std::cout << "  -d <dimension>    Dimensión de los puntos (default: 10)" << std::endl;
+    std::cout << "  -nt <num_tests>   Número de tests (default: 1)" << std::endl;
+    std::cout << "  -nq <num_queries> Número de queries por test (default: 5)" << std::endl;
+    std::cout << "  -np <num_points>  Número de puntos (default: 100000)" << std::endl;
+    std::cout << "  -h, --help        Mostrar esta ayuda" << std::endl;
+}
+
+TestParams parseArguments(int argc, char* argv[]) {
+    TestParams params;
+    
+    for (int i = 1; i < argc; ++i) {
+        if (strcmp(argv[i], "-d") == 0 && i + 1 < argc) {
+            params.dimension = std::atoi(argv[++i]);
+        } else if (strcmp(argv[i], "-nt") == 0 && i + 1 < argc) {
+            params.num_test = std::atoi(argv[++i]);
+        } else if (strcmp(argv[i], "-nq") == 0 && i + 1 < argc) {
+            params.num_queries = std::atoi(argv[++i]);
+        } else if (strcmp(argv[i], "-np") == 0 && i + 1 < argc) {
+            params.num_points = std::atoi(argv[++i]);
+        } else if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
+            showHelp(argv[0]);
+            exit(0);
+        }
+    }
+    
+    return params;
+}
+
+int main(int argc, char* argv[]) {
+    // Parsear argumentos de línea de comandos
+    TestParams params = parseArguments(argc, argv);
+    
+    std::cout << "🧪 TESTING M-TREE" << std::endl;
+    std::cout << "====================================" << std::endl;
 
     Timer timer;
-    std::vector<double>times;
-    for(int i = 0; i < num_test; i++) {
-        // Generar datos con los mismos parámetros
-        auto data_2d = generateMockData(num_points, dimension, min_val, max_val);
+    std::vector<double> times;
+    
+    for (int i = 0; i < params.num_test; i++) {
+        // Generar datos con los parámetros especificados
+        auto data_2d = generateMockData(params.num_points, params.dimension, 
+                                       params.min_val, params.max_val);
         auto tree = buildTree(data_2d);
         bool all_passed = true;
         
         timer.start();
-        for(int j = 0; j < num_queries; j++) {
+        for (int j = 0; j < params.num_queries; j++) {
             // Generar query aleatorio con los mismos parámetros que los datos
-            std::vector<double> query_2d = generateRandomQuery(dimension, min_val, max_val);
+            std::vector<double> query_2d = generateRandomQuery(params.dimension, 
+                                                              params.min_val, params.max_val);
             bool test_passed = runKNNTest(tree, data_2d, query_2d, 20);
             all_passed &= test_passed;
             
@@ -262,17 +260,20 @@ int main() {
         timer.stop();
         times.push_back(timer.getSeconds());
         
-        if(all_passed) {
+        if (all_passed) {
             std::cout << "📊 TEST " << i << " Exitoso" << std::endl;
         } else {
             std::cout << "❌ TEST " << i << " Falló" << std::endl;
             break;
         }
     }
+    
     double average_time = 0;
-    for(auto e: times)
+    for (auto e : times) {
         average_time += e;
+    }
     average_time /= (int)times.size();
     std::cout << "El tiempo promedio es: " << average_time << std::endl;
+    
     return 0;
 }
