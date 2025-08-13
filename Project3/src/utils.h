@@ -2,8 +2,9 @@
 #define UTILS_HPP
 #include <memory>
 #include "entry.h"
+#include "config.h"
 
-using params = MTreeParams<double, std::string, 10>;
+using params = MTreeConfig;
 using entry_t = entry<params>;
 using node_t = node<params>;
 using entry_type = std::shared_ptr<entry<params>>;

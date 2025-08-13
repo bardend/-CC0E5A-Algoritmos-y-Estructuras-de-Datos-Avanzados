@@ -455,7 +455,9 @@ void m_tree<Params>::insert(entry_ptr new_entry) {
     keep_overflow(current_leaf, positions);
 }
 
+#include "config.h"
+
 // Instanciaciones explícitas
-template class m_tree<MTreeParams<double, std::string, 10>>;
-template class node<MTreeParams<double, std::string, 10>>;
-template class heuristic_split<MTreeParams<double, std::string, 10>>; 
+template class m_tree<MTreeConfig>;
+template class node<MTreeConfig>;
+template class heuristic_split<MTreeConfig>; 

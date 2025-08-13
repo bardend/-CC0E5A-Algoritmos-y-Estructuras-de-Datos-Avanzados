@@ -6,8 +6,9 @@
 #include <iomanip>  // Necesario para std::fixed y std::setprecision
 
 #include "m_tree.h"
+#include "config.h"
 
-using tree_t = m_tree<MTreeParams<double, std::string, 10>>;
+using tree_t = m_tree<MTreeConfig>;
 
 // Función make_tree trasladada desde utils.hpp
 template <typename... args_t>
