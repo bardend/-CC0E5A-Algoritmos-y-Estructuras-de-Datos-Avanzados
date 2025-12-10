@@ -31,6 +31,10 @@ build/
 *.exe
 *.out
 *.app
+test_*
+!test_*.cpp
+!test_*.h
+MTreeApp
 
 # CMake
 CMakeCache.txt
