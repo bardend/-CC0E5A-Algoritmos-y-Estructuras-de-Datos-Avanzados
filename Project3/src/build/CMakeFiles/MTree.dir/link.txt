@@ -1,0 +1,2 @@
+/usr/bin/ar qc libMTree.a CMakeFiles/MTree.dir/m_tree.cpp.o
+/usr/bin/ranlib libMTree.a

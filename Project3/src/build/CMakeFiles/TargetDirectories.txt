@@ -1,0 +1,5 @@
+/home/runner/work/-CC0E5A-Algoritmos-y-Estructuras-de-Datos-Avanzados/-CC0E5A-Algoritmos-y-Estructuras-de-Datos-Avanzados/Project3/src/build/CMakeFiles/Entry.dir
+/home/runner/work/-CC0E5A-Algoritmos-y-Estructuras-de-Datos-Avanzados/-CC0E5A-Algoritmos-y-Estructuras-de-Datos-Avanzados/Project3/src/build/CMakeFiles/MTree.dir
+/home/runner/work/-CC0E5A-Algoritmos-y-Estructuras-de-Datos-Avanzados/-CC0E5A-Algoritmos-y-Estructuras-de-Datos-Avanzados/Project3/src/build/CMakeFiles/MTreeApp.dir
+/home/runner/work/-CC0E5A-Algoritmos-y-Estructuras-de-Datos-Avanzados/-CC0E5A-Algoritmos-y-Estructuras-de-Datos-Avanzados/Project3/src/build/CMakeFiles/edit_cache.dir
+/home/runner/work/-CC0E5A-Algoritmos-y-Estructuras-de-Datos-Avanzados/-CC0E5A-Algoritmos-y-Estructuras-de-Datos-Avanzados/Project3/src/build/CMakeFiles/rebuild_cache.dir

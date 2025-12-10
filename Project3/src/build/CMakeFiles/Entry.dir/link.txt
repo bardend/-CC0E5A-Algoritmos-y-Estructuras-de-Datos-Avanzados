@@ -1,0 +1,2 @@
+/usr/bin/ar qc libEntry.a CMakeFiles/Entry.dir/entry.cpp.o
+/usr/bin/ranlib libEntry.a
