@@ -1,0 +1,1 @@
+./ejecutar_multi_capacidad.sh && python3 graficar_multi_capacidad.py

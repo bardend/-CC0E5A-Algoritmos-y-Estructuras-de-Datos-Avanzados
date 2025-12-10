@@ -4,7 +4,7 @@
 // Configuración centralizada del M-Tree
 namespace mtree_config {
     // Capacidad de los nodos del árbol
-    static constexpr int CAPACITY = 15;
+    static constexpr int CAPACITY = 2;
     // Tipos de datos
     using feature_type = double;
     using identifier_type = std::string;

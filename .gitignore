@@ -1,0 +1,130 @@
+# =================================
+# .gitignore para Proyecto de Algoritmos
+# =================================
+
+# Archivos ejecutables
+*.exe
+*.out
+*.app
+detector_simple
+detector_capacity_*
+temp_detector_*
+small_test
+test_executable
+
+# Archivos de compilación C++
+*.o
+*.obj
+*.so
+*.dll
+*.dylib
+*.a
+*.lib
+
+# Archivos temporales del compilador
+*.d
+*.tmp
+*.temp
+*.log
+*.cache
+
+# Directorios de compilación
+build/
+bin/
+obj/
+debug/
+release/
+cmake-build-*/
+.cmake/
+
+# Archivos de Make
+Makefile
+*.make
+CMakeCache.txt
+CMakeFiles/
+
+# Archivos de IDEs y editores
+.vscode/
+.idea/
+*.sublime-*
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Archivos de depuración
+*.pdb
+*.ilk
+*.map
+*.exp
+core
+core.*
+*.dSYM/
+
+# Entornos virtuales Python
+env/
+venv/
+.env
+.venv
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Archivos de datos temporales
+*.csv.backup
+*.csv.tmp
+resultados_temp_*
+metrics_temp_*
+
+# Archivos de configuración temporal
+config.h.backup
+*.h.bak
+*.cpp.bak
+
+# Archivos de LaTeX
+*.aux
+*.log
+*.toc
+*.out
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.synctex.gz
+*.synctex(busy)
+*.pdf
+
+# Archivos de gráficas temporales
+*.png.tmp
+grafica_temp_*
+
+# Directorio metrics_output si es temporal
+metrics_output/
+
+# Archivos de sistema
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Archivos de respaldo del editor
+*~
+*.bak
+*.backup
+*.old
+*.orig
+
+# Archivos de logs
+*.log
+log/
+logs/
+
+# Archivos específicos del proyecto que no queremos versionar
+# (descomenta según necesites)
+# analisis_*.png
+# resultados_*.csv

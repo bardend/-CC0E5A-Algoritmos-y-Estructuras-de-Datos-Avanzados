@@ -1,0 +1,474 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[spanish,english]{babel}
+\usepackage{indentfirst}
+\usepackage{anysize}
+\marginsize{2.5cm}{1.8cm}{1.5cm}{1.7cm}
+\usepackage[psamsfonts]{amssymb}
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{multicol,multirow}
+\usepackage{graphicx}
+\usepackage{setspace}
+\usepackage{hyperref}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{tocloft}
+\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
+\renewcommand*\contentsname{Índice}
+\renewcommand{\thepage}{}
+\theoremstyle{definition}
+\renewcommand{\thefootnote}{\fnsymbol{footnote}}
+
+\begin{document}
+
+\begin{titlepage}
+\begin{center}
+    \vspace*{1 mm}
+    {\LARGE \textbf{UNIVERSIDAD NACIONAL DE INGENIERÍA}}\\
+    \vspace{2 mm}
+    {\LARGE \textbf{FACULTAD DE CIENCIAS}}\\[2mm]
+    {\LARGE \textbf{ESCUELA PROFESIONAL DE CIENCIAS DE LA COMPUTACIÓN}}\\    \vspace{1 mm}
+    \begin{figure}[h]
+        \centering 
+        \includegraphics[scale=0.7]{uni.jpeg}
+    \end{figure}
+    \vspace{3 mm}
+    {\Large \textbf{PROYECTO DE TESIS II}}\\[5mm]
+    {\Large \textbf{Integración de M-Tree para Búsqueda de Anomalías en Data Streaming}}\\[3mm]
+    {\large \textbf{ELABORADO POR: RICARDO ANDRE ULLOA VEGA}}\\[1mm]
+    {\large \textbf{ASESOR: AMÉRICO CHULLUNCUY REYNOSO}}\\[5mm]
+    {\large \textbf{LIMA - PERÚ}}\\[1mm]
+    {\large \textbf{2025}}\\
+\end{center}
+\end{titlepage}
+
+\begin{abstract}
+{\small
+En un entorno donde los flujos de datos (data streams) crecen de forma exponencial, la detección de anomalías en tiempo real se convierte en un desafío crucial. Este trabajo propone la integración de la estructura de datos M-Tree con sistemas de procesamiento en flujo, con el fin de desarrollar un modelo capaz de identificar patrones anómalos dentro de grandes volúmenes de información dinámica. La propuesta busca aprovechar las propiedades métricas del M-Tree para realizar búsquedas eficientes de similitud, reduciendo la complejidad computacional y permitiendo la detección temprana de eventos atípicos en aplicaciones críticas.
+
+\textbf{Palabras clave:} M-Tree, detección de anomalías, data streaming, estructuras métricas, procesamiento en tiempo real.
+}
+\end{abstract}
+
+\pagenumbering{arabic}
+
+\tableofcontents
+\vspace{20pt}
+\hrule
+\vspace{10pt}
+
+%---------------------------------------------------------
+\newpage
+\section*{\textbf{\underline{SIGLAS Y TÉRMINOS}}}
+\begin{tabular}{l p{0.3cm} p{11cm}}
+Batch & : & Procesamiento de grandes volúmenes de datos como un conjunto.\\
+Nodo & : & Elemento fundamental en una estructura jerárquica que contiene datos y enlaces.\\
+Partición & : & División lógica del espacio de datos en regiones métricas o funcionales.\\
+Promoción & : & Proceso de selección de un nodo como nuevo centro o raíz en un reajuste estructural.\\
+Espacio Métrico & : & Conjunto equipado con una función de distancia que satisface axiomas métricos.\\
+Radio de Cobertura & : & Distancia máxima desde un nodo promotor hasta sus objetos descendientes.\\
+LOF & : & Local Outlier Factor, algoritmo de detección de anomalías basado en densidad local.\\
+\end{tabular}
+
+%---------------------------------------------------------
+\newpage
+\section{CAPÍTULO I: PLANTEAMIENTO DEL PROBLEMA}
+
+\subsection{Descripción del problema de investigación}
+
+En la actualidad, el análisis de datos en tiempo real representa un reto técnico y computacional de gran magnitud. Diversas industrias generan datos en flujo continuo. La naturaleza dinámica, no estacionaria y de alta velocidad de estos flujos dificulta la distinción entre información normal y anomalías significativas.
+
+ La ausencia de soluciones escalables que combinen eficiencia con capacidad de streaming motiva esta investigación.
+
+\subsection{Formulación del problema}
+
+¿Cómo diseñar e implementar un sistema de detección de anomalías en tiempo real que utilice la estructura métrica M-Tree para procesar flujos de datos de forma eficiente, escalable y con baja latencia, manteniendo alta precisión en la identificación de patrones atípicos?
+
+\subsection{Propuesta de solución}
+
+Se propone desarrollar un sistema de procesamiento en flujo (\textit{streaming}) para la detección de anomalías mediante la estructura métrica \textbf{M-Tree}. El sistema incorporará dinámicamente los datos normales al árbol, fortaleciendo su capacidad de representación del espacio métrico, mientras que las instancias anómalas serán identificadas mediante análisis de distancia y aisladas para evaluación detallada.
+
+%---------------------------------------------------------
+\newpage
+\section{CAPÍTULO II: FUNDAMENTO TEÓRICO Y CONCEPTUAL}
+
+\subsection{Estructuras métricas}
+
+Las estructuras métricas son aquellas que organizan datos mediante funciones de distancia que satisfacen propiedades matemáticas específicas. El \textit{M-Tree} es una estructura jerárquica balanceada diseñada para espacios métricos.
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.7\textwidth]{mtree_structure.png}
+\caption{Estructura jerárquica de un M-Tree mostrando nodos internos y hojas.}
+\end{figure}
+
+
+\subsection{Fundamentos matemáticos del M-Tree}
+
+El M-Tree se fundamenta en espacios métricos $(X, d)$ donde $X$ es un conjunto de objetos y $d: X \times X \rightarrow \mathbb{R}$ es una función de distancia que satisface los siguientes axiomas:
+
+\begin{itemize}
+    \item \textbf{No negatividad:} $d(x, y) \geq 0$
+    \item \textbf{Identidad de indiscernibles:} $d(x, y) = 0 \Leftrightarrow x = y$
+    \item \textbf{Simetría:} $d(x, y) = d(y, x)$
+    \item \textbf{Desigualdad triangular:} $d(x, z) \leq d(x, y) + d(y, z)$
+\end{itemize}
+
+\textbf{Radio de cobertura:} Para un nodo promotor $p$, el radio de cobertura $r_p$ se define como:
+$$r_p = \max\{d(p, o_i) : o_i \in \text{subárbol}(p)\}$$
+
+Este radio determina la región métrica que cubre el nodo y es fundamental para la poda durante búsquedas.
+
+\textbf{Detección de anomalías:} Un objeto $q$ se considera potencialmente anómalo si su distancia a todos los nodos promotores visitados excede significativamente sus radios de cobertura:
+$$\text{score}(q) = \min_{p \in P} \left(\frac{d(q, p) - r_p}{\sigma_p}\right)$$
+
+donde $P$ es el conjunto de promotores, $r_p$ es el radio de cobertura de $p$, y $\sigma_p$ es una medida de dispersión local. Valores altos de $\text{score}(q)$ indican anomalía.
+
+\textbf{Profundidad del nodo:} La profundidad en la que un objeto es insertado también aporta información sobre su carácter anómalo. Objetos que terminan en niveles superficiales del árbol sugieren mayor distancia respecto a regiones densas, indicando potencial anomalía.
+
+% (Se elimina el apartado de gRPC y cualquier referencia a Python)
+
+\subsection{Data streaming y procesamiento en tiempo real}
+
+El procesamiento de flujos de datos se caracteriza por:
+
+\begin{itemize}
+    \item \textbf{Volumen ilimitado:} Los datos arriban continuamente sin límite predefinido.
+    \item \textbf{Velocidad variable:} El rate de entrada puede fluctuar significativamente.
+    \item \textbf{Una sola pasada:} No es práctico almacenar todos los datos, el procesamiento debe ser incremental.
+    \item \textbf{Restricciones temporales:} Las decisiones deben tomarse con latencia acotada.
+\end{itemize}
+
+El M-Tree debe adaptarse a este contexto mediante:
+\begin{itemize}
+    \item Inserciones incrementales sin reconstrucción completa.
+    \item Mantenimiento de balanceo mediante split y promoción de nodos.
+    \item Gestión de memoria limitada mediante políticas de eviction.
+    \item Actualización dinámica de estadísticas para calibración de umbrales.
+\end{itemize}
+
+%---------------------------------------------------------
+\newpage
+\section{CAPÍTULO III: OBJETIVOS DEL ESTUDIO}
+
+\subsection{Objetivo general}
+
+Desarrollar un sistema escalable y eficiente para la detección de anomalías en flujos de datos en tiempo real, basado en la integración de la estructura métrica M-Tree, capaz de procesar alto volumen de consultas con baja latencia y adaptable a diversos dominios de datos.
+
+\subsection{Objetivos específicos}
+
+\begin{enumerate}
+\item Diseñar una arquitectura modular mediante diagramas UML que defina las interfaces entre componentes del sistema, garantizando extensibilidad para diferentes tipos de datos y funciones de distancia.
+
+\item Implementar la estructura M-Tree como template genérico, parametrizada por tipo de dato y métrica de distancia, optimizada para operaciones concurrentes de inserción y búsqueda por similitud.
+
+\item Integrar el proyecto mediante herramientas de construcción y gestión de dependencias, con perfiles de optimización para diferentes entornos de ejecución.
+
+\item Implementar orquestación para despliegue en clúster, configurando balanceo de carga, replicación de árboles y tolerancia a fallos mediante estrategias de sharding métrico.
+
+\item Validar el sistema con datasets benchmark de diferentes dominios (financiero, IoT, ciberseguridad), evaluando precisión en detección, throughput y uso de recursos bajo carga operativa real.
+\end{enumerate}
+
+%---------------------------------------------------------
+\newpage
+\section{CAPÍTULO IV: JUSTIFICACIÓN}
+
+\subsection{Relevancia de la estructura M-Tree para detección de anomalías}
+
+La elección del M-Tree como estructura base para detección de anomalías se justifica por múltiples razones:
+
+\begin{itemize}
+    
+    \item \textbf{Radio de cobertura como indicador:} El radio $r_p$ de cada nodo representa la dispersión local de datos. Objetos que exceden significativamente estos radios son candidatos naturales a anomalía.
+    
+    \item \textbf{Profundidad como señal de anomalía:} Datos insertados en niveles superficiales del árbol indican mayor distancia respecto a centros de masa existentes, sugiriendo carácter atípico.
+    
+    \item \textbf{Eficiencia en búsqueda:} La complejidad logarítmica esperada permite evaluar miles de puntos por segundo, esencial para streaming.
+    
+    \item \textbf{Independencia de dimensionalidad:} A diferencia de métodos basados en coordenadas, el M-Tree opera eficientemente en espacios de alta dimensión donde la maldición de la dimensionalidad afecta a estructuras espaciales tradicionales.
+\end{itemize}
+
+% (Se elimina la subsección de ventajas del enfoque híbrido C++/Python)
+
+\subsection{Escalabilidad mediante contenedores y despliegue}
+
+La utilización de contenedores y orquestación facilita:
+
+\begin{itemize}
+    \item \textbf{Despliegue reproducible:} Entornos consistentes en desarrollo, pruebas y producción.
+    \item \textbf{Distribución en clúster:} Múltiples instancias del motor pueden ejecutarse en paralelo.
+    \item \textbf{Balanceo de carga:} Distribución de consultas según disponibilidad de recursos.
+    \item \textbf{Sharding métrico:} División del espacio de datos en regiones gestionadas por nodos diferentes.
+    \item \textbf{Tolerancia a fallos:} Replicación de árboles y recuperación automática ante fallos.
+\end{itemize}
+
+Esta arquitectura permite escalar horizontalmente según demanda, crucial para aplicaciones de producción con volúmenes de datos crecientes.
+
+%---------------------------------------------------------
+
+%---------------------------------------------------------
+\newpage
+\section{CAPÍTULO V: METODOLOGÍA}
+
+\subsection{Implementación del diagrama de clases}
+
+Se elaborará un diagrama UML que describa las relaciones entre las clases \texttt{Node}, \texttt{Entry} y \texttt{MTree}, así como las funciones principales para inserción, búsqueda y eliminación. El diseño debe facilitar extensiones futuras y cumplir principios de modularidad.
+
+\subsection{Arquitectura del sistema implementado}
+
+La implementación desarrollada consta de los siguientes componentes principales:
+
+\begin{itemize}
+    \item \textbf{Configuración centralizada (\texttt{config.h}):} Parámetros globales del M-Tree incluyendo capacidad de nodos, tipos de datos y métricas.
+    \item \textbf{Estructura de entrada (\texttt{entry.h/cpp}):} Representación de objetos con características vectoriales e identificadores únicos.
+    \item \textbf{Implementación del M-Tree (\texttt{m\_tree.h/cpp}):} Estructura principal con operaciones de inserción, búsqueda y mantenimiento de invariantes métricas.
+    \item \textbf{Detector de anomalías (\texttt{detector\_simple.cpp}):} Sistema de detección basado en análisis jerárquico de distancias y profundidad de inserción.
+\end{itemize}
+
+\subsection{Algoritmo de detección de anomalías implementado}
+
+El algoritmo desarrollado utiliza dos criterios principales para determinar el grado de anomalía:
+
+\textbf{Criterio de distancia métrica:}
+\begin{verbatim}
+int detectar_recursivo(entry_type elem, node_ptr nodo, int nivel) {
+    if (nodo->is_leaf()) {
+        for (int i = 0; i < nodo->size_entry(); ++i) {
+            auto entrada = nodo->get_entry(i);
+            double dist = elem->distance_to(*entrada);
+            if (dist <= entrada->radio_covertura + tolerancia) {
+                return 0; // No es anomalía
+            }
+        }
+        return min(nivel, log2(altura_arbol) + 1);
+    }
+    // Búsqueda recursiva en nodos internos...
+}
+\end{verbatim}
+
+\textbf{Criterio de profundidad jerárquica:}
+El nivel de anomalía se limita por $\lfloor \log_2(h) \rfloor + 1$ donde $h$ es la altura del árbol, estableciendo una cota superior teóricamente fundamentada en la estructura balanceada del M-Tree.
+
+%---------------------------------------------------------
+\newpage
+\section{CAPÍTULO VI: IMPLEMENTACIÓN Y DESARROLLO}
+
+\subsection{Configuración paramétrica del sistema}
+
+La implementación utiliza templates de C++ para parametrizar la estructura según los requisitos específicos:
+
+\begin{verbatim}
+namespace mtree_config {
+    static constexpr int CAPACITY = 15;
+    using feature_type = double;
+    using identifier_type = std::string;
+}
+
+using MTreeConfig = MTreeParams<mtree_config::feature_type, 
+                               mtree_config::identifier_type, 
+                               mtree_config::CAPACITY>;
+\end{verbatim}
+
+Esta arquitectura permite modificar dinámicamente parámetros críticos como la capacidad de nodos sin reescribir código, facilitando la experimentación y optimización.
+
+\subsection{Sistema de automatización multi-capacidad}
+
+Se desarrolló un sistema de automatización completo que permite experimentación sistemática:
+
+\begin{enumerate}
+    \item Modifica automáticamente el archivo \texttt{config.h} para diferentes valores de capacidad (2, 4, 6, 8, 10, 15)
+    \item Recompila el código fuente para cada configuración garantizando consistencia
+    \item Ejecuta pruebas con múltiples tamaños de árbol (1K, 5K, 10K elementos)
+    \item Recolecta métricas en formato CSV unificado para análisis posterior
+    \item Genera visualizaciones automáticas de resultados mediante Python/matplotlib
+    \item Restaura la configuración original al finalizar las pruebas
+\end{enumerate}
+
+\textbf{Comando de ejecución completa:}
+\begin{verbatim}
+./ejecutar_multi_capacidad.sh && python3 graficar_multi_capacidad.py
+\end{verbatim}
+
+Esta automatización permite ejecutar un conjunto completo de experimentos (18 configuraciones diferentes) con un solo comando, generando tanto los datos numéricos como las visualizaciones correspondientes.
+
+\subsection{Estructura de datos experimental}
+
+Los datos sintéticos generados siguen las siguientes características:
+\begin{itemize}
+    \item \textbf{Dimensionalidad:} Vectores de 2 dimensiones para facilitar visualización y análisis
+    \item \textbf{Distribución:} Uniforme en el rango [0, 100] para datos normales
+    \item \textbf{Anomalías sintéticas:} Distribución extendida [0, 200] para simular outliers
+    \item \textbf{Identificadores únicos:} Strings del formato "ID\_\{número\}" para trazabilidad
+    \item \textbf{Métrica de distancia:} Euclidiana estándar con tolerancia configurable
+\end{itemize}
+
+%---------------------------------------------------------
+\newpage
+\section{CAPÍTULO VII: RESULTADOS EXPERIMENTALES}
+
+\subsection{Metodología experimental}
+
+Los experimentos se realizaron variando sistemáticamente dos parámetros principales:
+\begin{itemize}
+    \item \textbf{Capacidad de nodos:} 2, 4, 6, 8, 10, 15 entradas por nodo
+    \item \textbf{Tamaño del conjunto de datos:} 1,000, 5,000, 10,000 elementos
+\end{itemize}
+
+Para cada configuración se midieron:
+\begin{itemize}
+    \item Tiempo de inserción promedio (milisegundos)
+    \item Altura resultante del árbol
+    \item Tasa de detección de anomalías (\%)
+    \item Distribución de niveles de anomalía
+\end{itemize}
+
+\subsection{Análisis de rendimiento temporal}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.8\textwidth]{analisis_multi_capacidad.png}
+\caption{Análisis de rendimiento del sistema implementado: (a) Tiempo de inserción vs tamaño del árbol mostrando escalabilidad logarítmica para diferentes capacidades de nodo, (b) Tasa de anomalías vs tamaño del árbol demostrando la estabilidad del algoritmo de detección independiente de la escala de datos}
+\label{fig:resultados}
+\end{figure}
+
+Los resultados muestran una relación inversa clara entre capacidad de nodos y tiempo de inserción:
+
+\begin{center}
+\begin{tabular}{|c|c|c|}
+\hline
+\textbf{Capacidad} & \textbf{Tiempo Promedio (ms)} & \textbf{Desviación Estándar} \\
+\hline
+6 & 0.0065 & 0.0056 \\
+8 & 0.0058 & 0.0059 \\
+10 & 0.0045 & 0.0050 \\
+15 & 0.0024 & 0.0041 \\
+\hline
+\end{tabular}
+\end{center}
+
+\textbf{Interpretación:} Capacidades mayores reducen la altura del árbol, disminuyendo el costo de traversal durante inserciones. La diferencia de rendimiento entre capacidad 6 y 15 representa una mejora del 63\% en velocidad.
+
+\subsection{Análisis de detección de anomalías}
+
+La tasa de detección varía significativamente según la capacidad de nodos:
+
+\begin{center}
+\begin{tabular}{|c|c|}
+\hline
+\textbf{Capacidad} & \textbf{Tasa de Anomalías (\%)} \\
+\hline
+6 & 86.67 \\
+8 & 73.33 \\
+10 & 66.67 \\
+15 & 66.67 \\
+\hline
+\end{tabular}
+\end{center}
+
+\textbf{Análisis crítico:}
+\begin{itemize}
+    \item \textbf{Capacidades bajas (6-8):} Mayor sensibilidad en detección debido a árboles más profundos y regiones métricas más granulares
+    \item \textbf{Capacidades altas (10-15):} Menor sensibilidad pero mayor eficiencia computacional
+    \item \textbf{Trade-off fundamental:} Existe una tensión inherente entre precisión de detección y rendimiento temporal
+\end{itemize}
+
+\subsection{Escalabilidad y comportamiento asintótico}
+
+El análisis de escalabilidad revela:
+
+\begin{itemize}
+    \item \textbf{Crecimiento logarítmico:} El tiempo de inserción escala como $O(\log n)$ respecto al tamaño del conjunto de datos, confirmando las propiedades teóricas del M-Tree
+    \item \textbf{Estabilidad de detección:} La tasa de anomalías permanece relativamente estable independiente del tamaño del árbol, indicando robustez del algoritmo
+    \item \textbf{Consistencia métrica:} Los niveles máximos de anomalía respetan la cota $\lfloor \log_2(h) \rfloor + 1$, validando el modelo teórico
+\end{itemize}
+
+%---------------------------------------------------------
+\newpage
+\section{CAPÍTULO VIII: CONCLUSIONES Y TRABAJO FUTURO}
+
+\subsection{Conclusiones principales}
+
+\begin{enumerate}
+\item \textbf{Viabilidad técnica demostrada:} La integración del M-Tree para detección de anomalías en tiempo real es factible y eficiente, con tiempos de inserción sub-milisegundo incluso para configuraciones de baja capacidad.
+
+\item \textbf{Trade-off precisión-rendimiento:} Se identificó una relación inversa entre sensibilidad de detección y eficiencia computacional. Capacidades de nodo entre 8-10 ofrecen un balance óptimo para la mayoría de aplicaciones.
+
+\item \textbf{Escalabilidad logarítmica confirmada:} El sistema mantiene complejidad $O(\log n)$ para inserciones, validando su aplicabilidad a conjuntos de datos de gran escala.
+
+\item \textbf{Robustez del algoritmo:} La detección de anomalías permanece estable independiente del tamaño del conjunto de datos, demostrando consistencia del enfoque métrico.
+\end{enumerate}
+
+\subsection{Contribuciones del trabajo}
+
+\begin{itemize}
+    \item Implementación modular y parametrizable de M-Tree con configuración dinámica de capacidades
+    \item Algoritmo de detección de anomalías basado en profundidad jerárquica y distancia métrica
+    \item Sistema de automatización completo para experimentación multi-paramétrica
+    \item Análisis cuantitativo del trade-off entre precisión y rendimiento en diferentes configuraciones
+\end{itemize}
+
+\subsection{Limitaciones identificadas}
+
+\begin{itemize}
+    \item \textbf{Memoria limitada:} No se implementaron políticas de eviction para conjuntos de datos ilimitados
+    \item \textbf{Distribución de datos:} Los experimentos utilizaron datos sintéticos uniformemente distribuidos; datos reales pueden presentar comportamientos diferentes
+    \item \textbf{Métricas de distancia:} Se utilizó exclusivamente distancia euclidiana; otras métricas podrían ofrecer mejores resultados según el dominio
+\end{itemize}
+
+\subsection{Trabajo futuro}
+
+\begin{enumerate}
+\item \textbf{Extensión a streaming real:} Implementar buffer deslizante y políticas de aging para datos históricos
+\item \textbf{Optimización concurrente:} Paralelización de operaciones de inserción y búsqueda mediante técnicas lock-free
+\item \textbf{Métricas adaptativas:} Investigar el uso de métricas de distancia aprendidas automáticamente según las características de los datos
+\item \textbf{Despliegue distribuido:} Implementar sharding métrico para distribución en clúster con balanceado de carga
+\item \textbf{Evaluación con datos reales:} Validar el sistema con datasets de dominios específicos (IoT, finanzas, ciberseguridad)
+\end{enumerate}
+
+\vspace{20pt}
+\hrule
+\vspace{10pt}
+
+\begin{thebibliography}{9}
+
+\bibitem{mtree1997}
+Ciaccia, P., Patella, M., \& Zezula, P. (1997). 
+\textit{M-tree: An efficient access method for similarity search in metric spaces}. 
+In Proceedings of the 23rd International Conference on Very Large Data Bases (pp. 426-435).
+
+\bibitem{streaming2016}
+Aggarwal, C. C. (2016). 
+\textit{Data streaming: algorithms and applications}. 
+Springer Science \& Business Media.
+
+\bibitem{anomaly2009}
+Chandola, V., Banerjee, A., \& Kumar, V. (2009). 
+\textit{Anomaly detection: A survey}. 
+ACM Computing Surveys, 41(3), 1-58.
+
+\bibitem{lof2000}
+Breunig, M. M., Kriegel, H. P., Ng, R. T., \& Sander, J. (2000). 
+\textit{LOF: identifying density-based local outliers}. 
+In Proceedings of the 2000 ACM SIGMOD International Conference on Management of Data (pp. 93-104).
+
+\bibitem{realtime2018}
+Kamp, M., Adilova, L., Sicking, J., Hüger, F., Peter, P., Wirtz, T., \& Wrobel, S. (2018). 
+\textit{Efficient decentralized deep learning by dynamic model averaging}. 
+arXiv preprint arXiv:1807.03210.
+
+\bibitem{metric2001}
+Zezula, P., Amato, G., Dohnal, V., \& Batko, M. (2006). 
+\textit{Similarity search: the metric space approach}. 
+Springer Science \& Business Media.
+
+\bibitem{cpp2017}
+Stroustrup, B. (2017). 
+\textit{A tour of C++}. 
+Addison-Wesley Professional.
+
+\bibitem{performance2019}
+García-García, F., Corral, A., Iribarne, L., \& Vassilakopoulos, M. (2019). 
+\textit{Efficient distance-based outlier detection on big data}. 
+IEEE Access, 7, 107935-107956.
+
+\end{thebibliography}
+
+\end{document}
