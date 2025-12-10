@@ -12,10 +12,13 @@ CSV_FILE="resultados_multi_capacidad.csv"
 echo "tree_size,capacity,element_id,insertion_time_ms,anomaly_level,is_anomaly,distance_to_radius" > $CSV_FILE
 
 # Capacidades a probar
-CAPACIDADES=(4 6 8 10 )
+CAPACIDADES=(6 8 10 )
 
 # Tamaños a probar  
 TAMANOS=(1000 5000 10000 50000)
+
+# Convertir array a string con comas para C++
+TAMANOS_CPP=$(IFS=', '; echo "${TAMANOS[*]}")
 
 # Backup del config.h original
 cp ../src/config.h ../src/config.h.backup
@@ -267,7 +270,8 @@ int main() {
     const std::string csv_file = "$CSV_FILE";
     const int capacity = $CAPACITY;
     
-    std::vector<int> tamanos = {1000, 5000, 10000};
+    // Usar los tamaños definidos en el script bash
+    std::vector<int> tamanos = {$TAMANOS_CPP};
     
     for (int tamano : tamanos) {
         probar_tamaño_arbol(tamano, capacity, csv_file);
