@@ -14,6 +14,8 @@
 #include <set>
 
 #include "../src/m_tree.h"
+#include "../src/config.h"
+#include "../src/utils.h"
 
 class Timer {
 private:
@@ -45,7 +47,7 @@ public:
     }
 };
 
-using tree_t = m_tree<MTreeParams<double, std::string, 10>>;
+using tree_t = m_tree<MTreeConfig>;
 
 template <typename... args_t>
 std::shared_ptr<tree_t> make_tree(args_t&&... args) {
